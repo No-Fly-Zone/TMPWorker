@@ -88,7 +88,7 @@ class FilesTab(ttk.Frame):
 
         self.full_paths = []
         self.lst_files = []
-        self.path_floder = None
+        self.path_out_floder = None
         self.path_pal = None
         self.path_template = None
 
@@ -130,27 +130,27 @@ class FilesTab(ttk.Frame):
         self.path_frame.place(x=260, y=10, width=500, height=80)
 
         # 1) 批处理路径选择
-        self.lb_floder = tk.Listbox(
-            self.path_frame, selectmode=tk.SINGLE, relief='flat')
-        self.lb_floder.place(x=0, y=0, width=300, height=25)
+        self.ent_out_floder = tk.Entry(
+            self.path_frame, relief='flat',insertwidth=1)
+        self.ent_out_floder.place(x=0, y=0, width=300, height=25)
 
         ttk.Button(
             self.path_frame, text='选择目录', command=self.btn_choose_folder
         ).place(x=320, y=0, width=80, height=25)
 
         # 2) 色盘选择
-        self.lb_pal = tk.Listbox(
-            self.path_frame, selectmode=tk.SINGLE, relief='flat')
-        self.lb_pal.place(x=0, y=30, width=300, height=25)
+        self.ent_pal = tk.Entry(
+            self.path_frame, relief='flat',insertwidth=1)
+        self.ent_pal.place(x=0, y=30, width=300, height=25)
 
         ttk.Button(
             self.path_frame, text='选择pal', command=self.btn_choose_pal
         ).place(x=320, y=30, width=80, height=25)
 
         # 3) 模板选择
-        self.lb_template = tk.Listbox(
-            self.path_frame, selectmode=tk.SINGLE, relief='flat')
-        self.lb_template.place(x=0, y=60, width=300, height=25)
+        self.ent_template = tk.Entry(
+            self.path_frame, relief='flat',insertwidth=1)
+        self.ent_template.place(x=0, y=60, width=300, height=25)
 
         self.btn_template = ttk.Button(
             self.path_frame, text='选择模板', command=self.btn_choose_template
@@ -230,14 +230,14 @@ class FilesTab(ttk.Frame):
     def btn_choose_folder(self):
         floder = filedialog.askdirectory(title='选择 batch floder')
         if not floder:
-            self.path_floder = ''
-            self.lb_floder.delete(0, tk.END)
+            self.path_out_floder = ''
+            self.ent_out_floder.delete(0, tk.END)
             self.save_config()
             return
 
-        self.path_floder = floder
-        self.lb_floder.delete(0, tk.END)
-        self.lb_floder.insert(tk.END, str(floder))
+        self.path_out_floder = floder
+        self.ent_out_floder.delete(0, tk.END)
+        self.ent_out_floder.insert(tk.END, str(floder))
         self.save_config()
 
     def btn_choose_pal(self):
@@ -247,13 +247,13 @@ class FilesTab(ttk.Frame):
                 title='选择 pal 文件',    filetypes=[("PAL files", '*.pal')])
             if not pal:
                 self.path_pal = ''
-                self.lb_pal.delete(0, tk.END)
+                self.ent_pal.delete(0, tk.END)
                 self.save_config()
                 return
             if pal.endswith('.pal'):
                 self.path_pal = pal
-                self.lb_pal.delete(0, tk.END)
-                self.lb_pal.insert(tk.END, pal)
+                self.ent_pal.delete(0, tk.END)
+                self.ent_pal.insert(0, pal)
                 self.save_config()
                 return
             messagebox.showwarning('Warning', 'Not a pal')
@@ -263,13 +263,13 @@ class FilesTab(ttk.Frame):
             ("TMP files", self.tmp_suffix)])
         if not template:
             self.path_template = ''
-            self.lb_template.delete(0, tk.END)
+            self.ent_template.delete(0, tk.END)
             self.save_config()
             return
         else:
             self.path_template = template
-            self.lb_template.delete(0, tk.END)
-            self.lb_template.insert(tk.END, template)
+            self.ent_template.delete(0, tk.END)
+            self.ent_template.insert(0, template)
             self.save_config()
             return
 
@@ -302,6 +302,8 @@ class FilesTab(ttk.Frame):
     def file_on_select(self, event):
         if not self.lb_files.curselection():
             return
+        
+        self.path_pal = self.ent_pal.get()
 
         if not Path(self.path_pal).is_file():
             return
@@ -319,6 +321,7 @@ class FilesTab(ttk.Frame):
             pal_name = 'iso' + file[-3:] + '.pal'
 
             print(pal_name)
+            self.path_pal = self.ent_pal.get()
             pal_floder = Path(self.path_pal).parent
             pal_file = pal_floder / pal_name
 
@@ -421,8 +424,13 @@ class FilesTab(ttk.Frame):
         os.makedirs(CONFIG_DIR, exist_ok=True)
         config = configparser.ConfigParser()
         config.optionxform = str
+        
         if Path(CONFIG_PATH).is_file():
             config.read(CONFIG_PATH, encoding="utf-8")
+
+            self.path_pal=self.ent_pal.get()
+            self.path_out_floder=self.ent_out_floder.get()
+            self.path_template=self.ent_template.get()
 
         if not config.has_section(SECTION_FILE):
             config.add_section(SECTION_FILE)
@@ -436,7 +444,7 @@ class FilesTab(ttk.Frame):
 
         config[SECTION_PATH] = {
             PAL_NAME: self.path_pal,
-            FLODER_NAME: self.path_floder,
+            FLODER_NAME: self.path_out_floder,
             TEMPLATE_NAME: self.path_template
         }
 
@@ -509,21 +517,21 @@ class FilesTab(ttk.Frame):
 
         # 刷新路径列表
         # 1) 刷新文件夹列表
-        self.path_floder = config.get(SECTION_PATH, FLODER_NAME, fallback="")
-        self.lb_floder.delete(0, tk.END)
-        self.lb_floder.insert(tk.END, self.path_floder)
+        self.path_out_floder = config.get(SECTION_PATH, FLODER_NAME, fallback="")
+        self.ent_out_floder.delete(0, tk.END)
+        self.ent_out_floder.insert(tk.END, self.path_out_floder)
 
         # 2) 刷新色盘列表
         self.path_pal = self.isfile(config.get(
             SECTION_PATH, PAL_NAME, fallback=""))
-        self.lb_pal.delete(0, tk.END)
-        self.lb_pal.insert(tk.END, self.path_pal)
+        self.ent_pal.delete(0, tk.END)
+        self.ent_pal.insert(0, self.path_pal)
 
         # 2) 刷新色盘列表
         self.path_template = self.isfile(config.get(
             SECTION_PATH, TEMPLATE_NAME, fallback=""))
-        self.lb_template.delete(0, tk.END)
-        self.lb_template.insert(tk.END, self.path_template)
+        self.ent_template.delete(0, tk.END)
+        self.ent_template.insert(0, self.path_template)
 
     # --------- 图像 ---------
 
@@ -545,7 +553,7 @@ class Tab_One(FilesTab):
         self.notebookType = 1
         # ----- 文件夹选择
 
-        self.lb_template.place_forget()
+        self.ent_template.place_forget()
         self.btn_template.place_forget()
 
         # ----- 选项设置
@@ -583,6 +591,13 @@ class Tab_One(FilesTab):
     # --------- 导出图像 ---------
 
     def btn_run(self):
+        self.path_pal = self.ent_pal.get()
+        self.path_pal=self.ent_pal.get()
+        self.path_out_floder=self.ent_out_floder.get()
+
+        prefix = self.text_prefix.get("1.0", tk.END).split('\n')[0]
+        suffix = self.text_suffix.get("1.0", tk.END).split('\n')[0]
+        
         bmp = self.var_exp_bmp.get() == 'enable'
         png = self.var_exp_png.get() == 'enable'
         if not (bmp or png):
@@ -592,8 +607,6 @@ class Tab_One(FilesTab):
             messagebox.showwarning('警告', '未选择色盘')
             return
 
-        prefix = self.text_prefix.get("1.0", tk.END).split('\n')[0]
-        suffix = self.text_suffix.get("1.0", tk.END).split('\n')[0]
 
         self.lst_files = self.full_paths.copy()
         # 选取的文件
@@ -608,10 +621,10 @@ class Tab_One(FilesTab):
         # 批处理文件夹
         if not suffix:
             suffix = tuple(self.theaters.copy())
-        if not self.path_floder == '' and Path(self.path_floder).is_dir():
+        if not self.path_out_floder == '' and Path(self.path_out_floder).is_dir():
             floder_files = [
                 str(p)
-                for p in Path(self.path_floder).iterdir()
+                for p in Path(self.path_out_floder).iterdir()
                 if p.is_file() and
                 (str(p) not in render_files) and
                 p.name.startswith(prefix) and
@@ -820,7 +833,10 @@ class Tab_Two(FilesTab):
     # --------- 导出图像 ---------
 
     def btn_run(self):
-        
+        self.path_pal=self.ent_pal.get()
+        self.path_out_floder=self.ent_out_floder.get()
+        self.path_template=self.ent_template.get()
+
         SAVE_ADDITION = ''
 
         if not Path(self.path_pal).is_file():
@@ -843,11 +859,11 @@ class Tab_Two(FilesTab):
         # 批处理文件夹
         if not suffix:
             suffix = tuple(['.png', '.bmp'])
-        if not self.path_floder == '' and Path(self.path_floder).is_dir():
+        if not self.path_out_floder == '' and Path(self.path_out_floder).is_dir():
 
             floder_files = [
                 str(p)
-                for p in Path(self.path_floder).iterdir()
+                for p in Path(self.path_out_floder).iterdir()
                 if p.is_file() and
                 (str(p) not in render_files) and
                 p.name.startswith(prefix) and
