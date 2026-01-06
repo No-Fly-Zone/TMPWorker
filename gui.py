@@ -173,33 +173,27 @@ class FilesTab(ttk.Frame):
         self.lb_prefix = ttk.Label(self.ckb_frame, text='前缀：')
         self.lb_prefix.place(x=150, y=0, width=80, height=25)
 
-        self.text_prefix = tk.Text(self.ckb_frame, relief='flat')
-        self.text_prefix.place(x=185, y=2, width=104, height=20)
-        ToolTip(self.text_prefix, "只转换带有该前缀的文件")
+        self.ent_prefix = tk.Entry(self.ckb_frame, relief='flat',insertwidth=1)
+        self.ent_prefix.place(x=185, y=2, width=104, height=20)
+        ToolTip(self.ent_prefix, "只转换带有该前缀的文件")
 
-        # self.text_prefix.bind("<Control-v>", self.text_limit_len_CtrlV)
-        # self.text_prefix.bind("<Key>", self.text_limit_len_key)
 
         # 3) Label 后缀
         self.lb_suffix = ttk.Label(self.ckb_frame, text='后缀：')
         self.lb_suffix.place(x=150, y=28, width=80, height=25)
 
-        self.text_suffix = tk.Text(self.ckb_frame, relief='flat')
-        self.text_suffix.place(x=185, y=30, width=104, height=20)
-        ToolTip(self.text_suffix, "只转换带有该后缀的文件，包含文件后缀名\n符合该后缀的文件将跳过气候检查")
+        self.ent_suffix = tk.Entry(self.ckb_frame, relief='flat',insertwidth=1)
+        self.ent_suffix.place(x=185, y=30, width=104, height=20)
+        ToolTip(self.ent_suffix, "只转换带有该后缀的文件，包含文件后缀名\n符合该后缀的文件将跳过气候检查")
 
-        # self.text_suffix.bind("<Control-v>", self.text_limit_len_CtrlV)
-        # self.text_suffix.bind("<Key>", self.text_limit_len_key)
 
         # 4) Label 导出名称
         self.lb_save_name = ttk.Label(self.ckb_frame, text='导出名称：')
         self.lb_save_name.place(x=150, y=58, width=80, height=25)
 
-        self.text_save_name = tk.Text(self.ckb_frame, relief='flat')
-        self.text_save_name.place(x=208, y=60, width=81, height=20)
+        self.ent_save_name = tk.Entry(self.ckb_frame, relief='flat',insertwidth=1)
+        self.ent_save_name.place(x=208, y=60, width=81, height=20)
 
-        # self.text_suffix.bind("<Control-v>", self.text_limit_len_CtrlV)
-        # self.text_suffix.bind("<Key>", self.text_limit_len_key)
 
         # 按钮区
         self.btn_frame = ttk.Frame(self)
@@ -586,7 +580,7 @@ class Tab_One(FilesTab):
         self.ckb_exp_bmp.place(x=0, y=50, width=80, height=25)
         ToolTip(self.ckb_exp_bmp, "导出为 BMP 文件")
 
-        ToolTip(self.text_save_name, "导出文件命名为[此处输入文本][01起始的序号].[png/bmp]")
+        ToolTip(self.ent_save_name, "导出文件命名为[此处输入文本][01起始的序号].[png/bmp]")
 
     # --------- 导出图像 ---------
 
@@ -595,8 +589,8 @@ class Tab_One(FilesTab):
         self.path_pal=self.ent_pal.get()
         self.path_out_floder=self.ent_out_floder.get()
 
-        prefix = self.text_prefix.get("1.0", tk.END).split('\n')[0]
-        suffix = self.text_suffix.get("1.0", tk.END).split('\n')[0]
+        prefix = self.ent_prefix.get().split('\n')[0]
+        suffix = self.ent_suffix.get().split('\n')[0]
         
         bmp = self.var_exp_bmp.get() == 'enable'
         png = self.var_exp_png.get() == 'enable'
@@ -648,7 +642,7 @@ class Tab_One(FilesTab):
             print(palette)
             self.log(f'正在导出第{i+1}个文件 {file}')
 
-            text_save_name = self.text_save_name.get(
+            text_save_name = self.ent_save_name.get(
                 "1.0", tk.END).split('\n')[0]
 
             if not text_save_name == '':
@@ -689,13 +683,13 @@ class Tab_Two(FilesTab):
 
         # 导出设置
         self.lb_save_name.place(x=100)
-        self.text_save_name.place(x=158)
+        self.ent_save_name.place(x=158)
 
         self.lb_prefix.place(x=100)
-        self.text_prefix.place(x=135)
+        self.ent_prefix.place(x=135)
 
         self.lb_suffix.place(x=100)
-        self.text_suffix.place(x=135)
+        self.ent_suffix.place(x=135)
 
         self.ckb_frame.place(x=270, y=110, width=400, height=300)
 
@@ -738,7 +732,7 @@ class Tab_Two(FilesTab):
         # 模板
         self.path_frame.place(height=85)
 
-        ToolTip(self.text_save_name,
+        ToolTip(self.ent_save_name,
                 "导出文件命名为[此处输入文本][01起始的序号].[气候名]\n对于导出地形，超过99后需要后续处理")
     # --------- 行为逻辑 ---------
 
@@ -843,8 +837,8 @@ class Tab_Two(FilesTab):
             messagebox.showwarning('警告', '未选择色盘')
             return
 
-        prefix = self.text_prefix.get("1.0", tk.END).split('\n')[0]
-        suffix = self.text_suffix.get("1.0", tk.END).split('\n')[0]
+        prefix = self.ent_prefix.get().split('\n')[0]
+        suffix = self.ent_suffix.get().split('\n')[0]
 
         self.lst_files = self.full_paths.copy()
         # 选取的文件
@@ -909,8 +903,7 @@ class Tab_Two(FilesTab):
             img_floder = Path(import_img).parent
             tem_floder = Path(import_template).parent
 
-            text_save_name = self.text_save_name.get(
-                "1.0", tk.END).split('\n')[0]
+            text_save_name = self.ent_save_name.get().split('\n')[0]
 
             # 色盘
 
