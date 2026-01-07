@@ -13,7 +13,7 @@ import traceback
 
 
 def get_base_path():
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         # PyInstaller onefile 解压目录
         return sys._MEIPASS
     return Path(__file__).resolve().parent
@@ -21,13 +21,13 @@ def get_base_path():
 
 
 def get_resource_path():
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         return sys._MEIPASS
     return Path(__file__).resolve().parent
 
 
 def get_app_dir():
-    if getattr(sys, 'frozen', False):
+    if getattr(sys, "frozen", False):
         return Path(sys.executable).parent
     return Path(__file__).resolve().parent
 
@@ -91,31 +91,31 @@ class FilesTab(ttk.Frame):
 
         self.full_paths = []
         self.lst_files = []
-        self.path_out_floder = ''
-        self.path_pal = ''
-        self.path_template = ''
+        self.path_out_floder = ""
+        self.path_pal = ""
+        self.path_template = ""
 
         self.current_image = None  # 保存 PhotoImage 引用
 
-        self.only_start = ''
-        self.only_end = ''
+        self.only_start = ""
+        self.only_end = ""
 
         self.image_label_width = 300
         self.image_label_height = 200
-        self.theaters = ['.tem', '.urb', '.sno', '.ubn', '.des', '.lun']
+        self.theaters = [".tem", ".urb", ".sno", ".ubn", ".des", ".lun"]
         self._init_ui()
 
         self.load_config()
-        self.tmp_suffix = '*'+' *'.join(self.theaters)
+        self.tmp_suffix = "*"+" *".join(self.theaters)
 
-    def log(self, msg, level='INFO'):
+    def log(self, msg, level="INFO"):
         self.log_callback(msg, level)
 
     def safe_call(self, func, *args, **kwargs):
         try:
             return func(*args, **kwargs)
         except Exception:
-            self.log(traceback.format_exc(), 'ERROR')
+            self.log(traceback.format_exc(), "ERROR")
             return None
     # --------- UI ---------
 
@@ -126,7 +126,7 @@ class FilesTab(ttk.Frame):
         list_frame.place(x=10, y=10, width=250, height=370)
 
         self.lb_files = tk.Listbox(
-            list_frame, selectmode=tk.EXTENDED, relief='flat', takefocus=False)
+            list_frame, selectmode=tk.EXTENDED, relief="flat", takefocus=False)
         self.lb_files.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         sb = ttk.Scrollbar(list_frame, orient=tk.VERTICAL,
@@ -140,29 +140,29 @@ class FilesTab(ttk.Frame):
 
         # 1) 批处理路径选择
         self.ent_out_floder = tk.Entry(
-            self.path_frame, relief='flat', insertwidth=1)
+            self.path_frame, relief="flat", insertwidth=1)
         self.ent_out_floder.place(x=0, y=0, width=300, height=25)
 
         ttk.Button(
-            self.path_frame, text='选择目录', command=self.btn_choose_folder
+            self.path_frame, text="选择目录", command=self.btn_choose_folder
         ).place(x=320, y=0, width=80, height=25)
 
         # 2) 色盘选择
         self.ent_pal = tk.Entry(
-            self.path_frame, relief='flat', insertwidth=1)
+            self.path_frame, relief="flat", insertwidth=1)
         self.ent_pal.place(x=0, y=30, width=300, height=25)
 
         ttk.Button(
-            self.path_frame, text='选择pal', command=self.btn_choose_pal
+            self.path_frame, text="选择pal", command=self.btn_choose_pal
         ).place(x=320, y=30, width=80, height=25)
 
         # 3) 模板选择
         self.ent_template = tk.Entry(
-            self.path_frame, relief='flat', insertwidth=1)
+            self.path_frame, relief="flat", insertwidth=1)
         self.ent_template.place(x=0, y=60, width=300, height=25)
 
         self.btn_template = ttk.Button(
-            self.path_frame, text='选择模板', command=self.btn_choose_template
+            self.path_frame, text="选择模板", command=self.btn_choose_template
         )
         self.btn_template.place(x=320, y=60, width=80, height=25)
 
@@ -170,39 +170,39 @@ class FilesTab(ttk.Frame):
         self.ckb_frame = ttk.Frame(self)
 
         # 1) Checkbox 自动色盘
-        self.var_auto_pal = tk.StringVar(value='enable')
+        self.var_auto_pal = tk.StringVar(value="enable")
 
         self.ckb_auto_pal = ttk.Checkbutton(
-            self.ckb_frame, text='自动色盘', variable=self.var_auto_pal, onvalue='enable', offvalue='disable')
+            self.ckb_frame, text="自动色盘", variable=self.var_auto_pal, onvalue="enable", offvalue="disable")
 
         self.ckb_auto_pal.place(x=0, y=0, width=80, height=25)
         ToolTip(self.ckb_auto_pal,
                 "根据 tmp 文件后缀在选中色盘的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
 
         # 2) Label 前缀
-        self.lb_prefix = ttk.Label(self.ckb_frame, text='前缀：')
+        self.lb_prefix = ttk.Label(self.ckb_frame, text="前缀：")
         self.lb_prefix.place(x=150, y=0, width=80, height=25)
 
         self.ent_prefix = tk.Entry(
-            self.ckb_frame, relief='flat', insertwidth=1)
+            self.ckb_frame, relief="flat", insertwidth=1)
         self.ent_prefix.place(x=185, y=2, width=104, height=20)
         ToolTip(self.ent_prefix, "只转换带有该前缀的文件")
 
         # 3) Label 后缀
-        self.lb_suffix = ttk.Label(self.ckb_frame, text='后缀：')
+        self.lb_suffix = ttk.Label(self.ckb_frame, text="后缀：")
         self.lb_suffix.place(x=150, y=28, width=80, height=25)
 
         self.ent_suffix = tk.Entry(
-            self.ckb_frame, relief='flat', insertwidth=1)
+            self.ckb_frame, relief="flat", insertwidth=1)
         self.ent_suffix.place(x=185, y=30, width=104, height=20)
         ToolTip(self.ent_suffix, "只转换带有该后缀的文件，包含文件后缀名\n符合该后缀的文件将跳过气候检查")
 
         # 4) Label 导出名称
-        self.lb_save_name = ttk.Label(self.ckb_frame, text='导出名称：')
+        self.lb_save_name = ttk.Label(self.ckb_frame, text="导出名称：")
         self.lb_save_name.place(x=150, y=58, width=80, height=25)
 
         self.ent_save_name = tk.Entry(
-            self.ckb_frame, relief='flat', insertwidth=1)
+            self.ckb_frame, relief="flat", insertwidth=1)
         self.ent_save_name.place(x=208, y=60, width=81, height=20)
 
         # 按钮区
@@ -215,14 +215,14 @@ class FilesTab(ttk.Frame):
             x=365, y=210, width=self.image_label_width, height=self.image_label_height)
 
         self.lb_files.bind("<<ListboxSelect>>", self.file_on_select)
-        self.show_preview(Image.new('RGB', (10, 10), (255, 255, 255)))
+        self.show_preview(Image.new("RGB", (10, 10), (255, 255, 255)))
 
     # --------- 行为逻辑 ---------
 
     def get_palette(self, file_name=None):
         print(self.var_auto_pal.get())
-        if self.var_auto_pal.get() == 'enable':
-            pal_name = 'iso' + file_name[-3:] + '.pal'
+        if self.var_auto_pal.get() == "enable":
+            pal_name = "iso" + file_name[-3:] + ".pal"
             print(pal_name)
             pal_floder = Path(self.path_pal).parent
             pal_file = pal_floder / pal_name
@@ -232,9 +232,9 @@ class FilesTab(ttk.Frame):
         return palette
 
     def btn_choose_folder(self):
-        floder = filedialog.askdirectory(title='选择导出文件夹')
+        floder = filedialog.askdirectory(title="选择导出文件夹")
         if not floder:
-            self.path_out_floder = ''
+            self.path_out_floder = ""
             self.ent_out_floder.delete(0, tk.END)
             self.save_config()
             return
@@ -248,25 +248,25 @@ class FilesTab(ttk.Frame):
 
         while True:
             pal = filedialog.askopenfilename(
-                title='选择 pal 文件',    filetypes=[("PAL files", '*.pal')])
+                title="选择 pal 文件",    filetypes=[("PAL files", "*.pal")])
             if not pal:
-                self.path_pal = ''
+                self.path_pal = ""
                 self.ent_pal.delete(0, tk.END)
                 self.save_config()
                 return
-            if pal.endswith('.pal'):
+            if pal.endswith(".pal"):
                 self.path_pal = pal
                 self.ent_pal.delete(0, tk.END)
                 self.ent_pal.insert(0, pal)
                 self.save_config()
                 return
-            messagebox.showwarning('Warning', 'Not a pal')
+            messagebox.showwarning("Warning", "Not a pal")
 
     def btn_choose_template(self):
-        template = filedialog.askopenfilename(title='选择文件',    filetypes=[
+        template = filedialog.askopenfilename(title="选择文件",    filetypes=[
             ("TMP files", self.tmp_suffix)])
         if not template:
-            self.path_template = ''
+            self.path_template = ""
             self.ent_template.delete(0, tk.END)
             self.save_config()
             return
@@ -278,7 +278,7 @@ class FilesTab(ttk.Frame):
             return
 
     def btn_add_files(self):
-        files = filedialog.askopenfilenames(title='选择文件',    filetypes=[
+        files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
             ("TMP files", self.tmp_suffix)])
         for f in files:
             if f not in self.full_paths:
@@ -335,18 +335,18 @@ class FilesTab(ttk.Frame):
     # --------- 配置读写 ---------
 
     def save_config(self):
-        SECTION_FILE = 'Files'
-        TMPPATH_NAME = 'TmpPath'
-        IMAGEPATH_NAME = 'ImagePath'
+        SECTION_FILE = "Files"
+        TMPPATH_NAME = "TmpPath"
+        IMAGEPATH_NAME = "ImagePath"
 
-        SECTION_PATH = 'Paths'
-        PAL_NAME = 'Palette'
-        FLODER_NAME = 'FileFloder'
-        TEMPLATE_NAME = 'Template'
+        SECTION_PATH = "Paths"
+        PAL_NAME = "Palette"
+        FLODER_NAME = "FileFloder"
+        TEMPLATE_NAME = "Template"
 
-        SECTION_SETTING = 'Settings'
-        AUTOPAL_NAME = 'AutoPal'
-        THEATER_NAME = 'Theater'
+        SECTION_SETTING = "Settings"
+        AUTOPAL_NAME = "AutoPal"
+        THEATER_NAME = "Theater"
 
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         config = configparser.ConfigParser()
@@ -386,23 +386,23 @@ class FilesTab(ttk.Frame):
     def isfile(self, some_path):
         if Path(some_path).is_file():
             return some_path
-        return ''
+        return ""
 
     def load_config(self):
 
         # 读取 config
-        SECTION_FILE = 'Files'
-        TMPPATH_NAME = 'TmpPath'
-        IMAGEPATH_NAME = 'ImagePath'
+        SECTION_FILE = "Files"
+        TMPPATH_NAME = "TmpPath"
+        IMAGEPATH_NAME = "ImagePath"
 
-        SECTION_PATH = 'Paths'
-        PAL_NAME = 'Palette'
-        FLODER_NAME = 'FileFloder'
-        TEMPLATE_NAME = 'Template'
+        SECTION_PATH = "Paths"
+        PAL_NAME = "Palette"
+        FLODER_NAME = "FileFloder"
+        TEMPLATE_NAME = "Template"
 
-        SECTION_SETTING = 'Settings'
-        AUTOPAL_NAME = 'AutoPal'
-        THEATER_NAME = 'Theater'
+        SECTION_SETTING = "Settings"
+        AUTOPAL_NAME = "AutoPal"
+        THEATER_NAME = "Theater"
 
         if not Path(CONFIG_PATH).exists():
             self.save_config()
@@ -415,17 +415,17 @@ class FilesTab(ttk.Frame):
         t_basic = config.get(SECTION_SETTING, THEATER_NAME,
                              fallback=".tem,.urb,.sno,.ubn,.des,.lun")
         if not t_basic:  # 防止空值，不能只用 fallback
-            self.theaters = ['.tem', '.urb', '.sno', '.ubn', '.des', '.lun']
+            self.theaters = [".tem", ".urb", ".sno", ".ubn", ".des", ".lun"]
         else:
-            self.theaters = t_basic.split(',')
+            self.theaters = t_basic.split(",")
 
         # 自动色盘
         auto_pal = config.get(SECTION_SETTING, AUTOPAL_NAME,
                               fallback=True)
-        if auto_pal in {'enable', 'disable'}:
+        if auto_pal in {"enable", "disable"}:
             self.var_auto_pal.set(auto_pal)
         else:
-            self.var_auto_pal.set('enable')
+            self.var_auto_pal.set("enable")
 
         # 刷新文件列表
         if self.notebookType == 1:
@@ -488,48 +488,46 @@ class Tab_One(FilesTab):
         # ----- 选项设置
 
         # 按钮区
-        ttk.Button(self.btn_frame, text='添加',
+        ttk.Button(self.btn_frame, text="添加",
                    command=self.btn_add_files).place(x=3, y=0, width=80, height=25)
-        ttk.Button(self.btn_frame, text='移除',
+        ttk.Button(self.btn_frame, text="移除",
                    command=self.btn_remove_selected).place(x=3, y=30, width=80, height=25)
-        ttk.Button(self.btn_frame, text='清空全部',
+        ttk.Button(self.btn_frame, text="清空全部",
                    command=self.btn_remove_all).place(x=3, y=60, width=80, height=25)
-        ttk.Button(self.btn_frame, text='导出',
+        ttk.Button(self.btn_frame, text="导出",
                    command=self.btn_run).place(x=3, y=110, width=80, height=25)
 
         # 导出设置
         self.ckb_frame.place(x=270, y=90, width=400, height=300)
-        
-
-        
 
         # 导出 PNG
-        self.var_exp_png = tk.StringVar(value='enable')
+        self.var_exp_png = tk.StringVar(value="enable")
 
         self.ckb_exp_png = ttk.Checkbutton(
-            self.ckb_frame, text='导出 PNG', variable=self.var_exp_png, onvalue='enable', offvalue='disable')
+            self.ckb_frame, text="导出 PNG", variable=self.var_exp_png, onvalue="enable", offvalue="disable")
 
         self.ckb_exp_png.place(x=0, y=25, width=80, height=25)
         ToolTip(self.ckb_exp_png, "导出为 PNG 文件")
 
         # 导出 BMP
-        self.var_exp_bmp = tk.StringVar(value='disable')
+        self.var_exp_bmp = tk.StringVar(value="disable")
 
         self.ckb_exp_bmp = ttk.Checkbutton(
-            self.ckb_frame, text='导出 BMP', variable=self.var_exp_bmp, onvalue='enable', offvalue='disable')
+            self.ckb_frame, text="导出 BMP", variable=self.var_exp_bmp, onvalue="enable", offvalue="disable")
 
         self.ckb_exp_bmp.place(x=0, y=50, width=80, height=25)
         ToolTip(self.ckb_exp_bmp, "导出为 BMP 文件")
 
         # 导出 Zdata
-        self.var_zdata_mode = tk.StringVar(value='disable')
+        self.var_zdata_mode = tk.StringVar(value="disable")
 
         self.ckb_zdata_mode = ttk.Checkbutton(
-            self.ckb_frame, text='Zdata 模式', variable=self.var_zdata_mode, onvalue='enable', offvalue='disable')
+            self.ckb_frame, text="Zdata 模式", variable=self.var_zdata_mode, onvalue="enable", offvalue="disable")
 
         self.ckb_zdata_mode.place(x=0, y=75, width=100, height=25)
 
-        ToolTip(self.ckb_zdata_mode, "导出图像的 Zdata\n原始值 0-29对应图像 (0,0,0) 到 (232,232,232)")
+        ToolTip(self.ckb_zdata_mode,
+                "导出图像的 Zdata\n原始值 0-29对应图像 (0,0,0) 到 (232,232,232)")
 
         ToolTip(self.ent_save_name, "导出文件命名为[此处输入文本][01起始的序号].[png/bmp]")
 
@@ -549,10 +547,10 @@ class Tab_One(FilesTab):
 
     # 图片预览
     def render_preview(self, file):
-        export_img = file[:-4] + '.png'
+        export_img = file[:-4] + ".png"
 
-        if self.var_auto_pal.get() == 'enable':
-            pal_name = 'iso' + file[-3:] + '.pal'
+        if self.var_auto_pal.get() == "enable":
+            pal_name = "iso" + file[-3:] + ".pal"
 
             print(pal_name)
             self.path_pal = self.ent_pal.get()
@@ -564,7 +562,7 @@ class Tab_One(FilesTab):
             palette = PalFile(self.path_pal).palette
         tmp = TmpFile(file)
 
-        if self.var_zdata_mode.get() == 'disable':
+        if self.var_zdata_mode.get() == "disable":
             render_img = render.render_full_png(
                 tmp, palette, export_img,
                 render_extra=True, out_bmp=False, out_png=False)
@@ -575,9 +573,9 @@ class Tab_One(FilesTab):
     def show_preview(self, render_img, palette=None):
 
         # 填充边框颜色
-        border_color1 = (255, 255, 255, 255) if render_img.mode == 'RGBA' else (
+        border_color1 = (255, 255, 255, 255) if render_img.mode == "RGBA" else (
             255, 255, 255)
-        border_color2 = (225, 225, 225, 255) if render_img.mode == 'RGBA' else (
+        border_color2 = (225, 225, 225, 255) if render_img.mode == "RGBA" else (
             225, 225, 225)
 
         p_width = self.image_label_width - 8
@@ -624,16 +622,16 @@ class Tab_One(FilesTab):
         self.path_pal = self.ent_pal.get()
         self.path_out_floder = self.ent_out_floder.get()
 
-        prefix = self.ent_prefix.get().split('\n')[0]
-        suffix = self.ent_suffix.get().split('\n')[0]
+        prefix = self.ent_prefix.get().split("\n")[0]
+        suffix = self.ent_suffix.get().split("\n")[0]
 
-        bmp = self.var_exp_bmp.get() == 'enable'
-        png = self.var_exp_png.get() == 'enable'
+        bmp = self.var_exp_bmp.get() == "enable"
+        png = self.var_exp_png.get() == "enable"
         if not (bmp or png):
-            messagebox.showwarning('警告', '未选择导出格式')
+            messagebox.showwarning("警告", "未选择导出格式")
             return
         if not Path(self.path_pal).is_file():
-            messagebox.showwarning('警告', '未选择色盘')
+            messagebox.showwarning("警告", "未选择色盘")
             return
 
         self.lst_files = self.full_paths.copy()
@@ -649,7 +647,7 @@ class Tab_One(FilesTab):
         # 批处理文件夹
         if not suffix:
             suffix = tuple(self.theaters.copy())
-        # if not self.path_out_floder == '' and Path(self.path_out_floder).is_dir():
+        # if not self.path_out_floder == "" and Path(self.path_out_floder).is_dir():
         #     floder_files = [
         #         str(p)
         #         for p in Path(self.path_out_floder).iterdir()
@@ -660,55 +658,55 @@ class Tab_One(FilesTab):
         #     ]
         #     render_files += floder_files
         if not render_files:
-            messagebox.showwarning('警告', '未选择需要导出的 TMP 文件')
+            messagebox.showwarning("警告", "未选择需要导出的 TMP 文件")
             return
 
-        self.log(f'开始导出已选择的 {len(render_files)} 个文件')
+        self.log(f"开始导出已选择的 {len(render_files)} 个文件")
         self.save_config()
         self.load_config()
 
         # 调用
         save_index = 1
         for i, file in enumerate(render_files):
-            if self.path_out_floder == '':
+            if self.path_out_floder == "":
                 self.path_out_floder = str(Path(file).parent)
             # 色盘
             palette = self.get_palette(file_name=file)
             # print(palette)
-            self.log(f'正在导出第{i+1}个文件 {file}')
+            self.log(f"正在导出第{i+1}个文件 {file}")
 
-            text_save_name = self.ent_save_name.get().split('\n')[0]
+            text_save_name = self.ent_save_name.get().split("\n")[0]
             print(self.path_out_floder)
             # 指定保存名称
-            if not text_save_name == '':
-                output_img = str(self.path_out_floder + text_save_name + '/' +
+            if not text_save_name == "":
+                output_img = str(self.path_out_floder + text_save_name + "/" +
                                  str(save_index).zfill(len(str(len(render_files)))))
                 save_index += 1
             else:
                 print(str(Path(file).name))
                 output_img = self.path_out_floder + \
-                    '/' + str(Path(file).name)[:-4]
+                    "/" + str(Path(file).name)[:-4]
 
             tmp = TmpFile(file)
 
-            if self.var_zdata_mode.get() == 'disable':
+            if self.var_zdata_mode.get() == "disable":
                 re_image = self.safe_call(render.render_full_png,
                                           tmp, palette, output_img,
                                           render_extra=True, out_bmp=bmp, out_png=png)
             else:
                 re_image = self.safe_call(render.render_full_ZData,
                                           tmp, output_img, out_bmp=bmp, out_png=png)
-                output_img += '_z'
+                output_img += "_z"
 
             if re_image == None:
-                self.log(f'第{i+1}个文件 {file}导出失败', 'WARN')
+                self.log(f"第{i+1}个文件 {file}导出失败", "WARN")
             else:
                 if bmp:
-                    self.log(f'已导出第{i+1}个文件 {str(Path(output_img + '.bmp'))}')
+                    self.log(f"已导出第{i+1}个文件 {str(Path(output_img + ".bmp"))}")
                 if png:
-                    self.log(f'已导出第{i+1}个文件 {str(Path(output_img + '.png'))}')
+                    self.log(f"已导出第{i+1}个文件 {str(Path(output_img + ".png"))}")
 
-        self.log(f'已导出全部文件', 'SUCCESS')
+        self.log(f"已导出全部文件", "SUCCESS")
 
 # ----------- 导入图像 -----------
 
@@ -721,18 +719,18 @@ class Tab_Two(FilesTab):
 
         # 按钮区
 
-        ttk.Button(self.btn_frame, text='添加',
+        ttk.Button(self.btn_frame, text="添加",
                    command=self.btn_add_files).place(x=3, y=0, width=80, height=25)
-        ttk.Button(self.btn_frame, text='移除',
+        ttk.Button(self.btn_frame, text="移除",
                    command=self.btn_remove_selected).place(x=3, y=30, width=80, height=25)
-        ttk.Button(self.btn_frame, text='清空全部',
+        ttk.Button(self.btn_frame, text="清空全部",
                    command=self.btn_remove_all).place(x=3, y=60, width=80, height=25)
-        ttk.Button(self.btn_frame, text='导入',
+        ttk.Button(self.btn_frame, text="导出文件",
                    command=self.btn_run).place(x=3, y=110, width=80, height=25)
 
         # 导出设置
         self.ckb_frame.place(x=270, y=110, width=400, height=300)
-        
+
         self.lb_save_name.place(x=100)
         self.ent_save_name.place(x=158)
 
@@ -742,23 +740,22 @@ class Tab_Two(FilesTab):
         self.lb_suffix.place(x=100)
         self.ent_suffix.place(x=135)
 
-
-        self.var_auto_radar = tk.StringVar(value='enable')
-        self.var_impt_img = tk.StringVar(value='enable')
-        self.var_impt_ext = tk.StringVar(value='enable')
+        self.var_auto_radar = tk.StringVar(value="enable")
+        self.var_impt_img = tk.StringVar(value="enable")
+        self.var_impt_ext = tk.StringVar(value="enable")
 
         self.ckb_auto_radar = ttk.Checkbutton(
-            self.ckb_frame, text='自动雷达色', variable=self.var_auto_radar, onvalue='enable', offvalue='disable')
+            self.ckb_frame, text="自动雷达色", variable=self.var_auto_radar, onvalue="enable", offvalue="disable")
         self.ckb_auto_radar.place(x=0, y=25, width=100, height=25)
         ToolTip(self.ckb_auto_radar, "雷达色")
 
         self.ckb_impt_img = ttk.Checkbutton(
-            self.ckb_frame, text='导入图像', variable=self.var_impt_img, onvalue='enable', offvalue='disable')
+            self.ckb_frame, text="导入图像", variable=self.var_impt_img, onvalue="enable", offvalue="disable")
         self.ckb_impt_img.place(x=0, y=50, width=100, height=25)
         ToolTip(self.ckb_impt_img, "导入图像")
 
         self.ckb_impt_ext = ttk.Checkbutton(
-            self.ckb_frame, text='导入 Extra', variable=self.var_impt_ext, onvalue='enable', offvalue='disable')
+            self.ckb_frame, text="导入 Extra", variable=self.var_impt_ext, onvalue="enable", offvalue="disable")
         self.ckb_impt_ext.place(x=0, y=75, width=100, height=25)
         ToolTip(self.ckb_impt_ext, "导入 Extra")
 
@@ -773,11 +770,25 @@ class Tab_Two(FilesTab):
                 "使用选中模板：按当前预览模板导出全部文件\n"
                 "图像文件名匹配：在图像所在文件夹中选择图像同名文件\n"
                 "模板文件夹匹配：在当前选中模板所在文件夹中选择图像同名文件\n"
-                "匹配时默认自动色盘转换全部气候")
-        ttk.Label(self.ckb_frame, text='导入模式：').place(
+                "匹配时默认使用自动色盘转换对应气候")
+        ttk.Label(self.ckb_frame, text="导出模式：").place(
             x=260, y=0, width=60, height=20)
         self.cb_specify_template.place(x=260, y=25, width=115, height=24)
         self.cb_specify_template.current(0)
+
+        self.var_output_theater = tk.StringVar()
+        self.output_theaters_values = ["按选中模板气候"]
+        self.output_theaters_values += ["转换为"+i[1:] for i in self.theaters]
+
+        self.cb_output_theater = ttk.Combobox(
+            self.ckb_frame,
+            textvariable=self.var_output_theater,
+            values=self.output_theaters_values,
+            state="readonly")
+        ToolTip(self.cb_output_theater,
+                "导出文件的气候类型")
+        self.cb_output_theater.place(x=260, y=60, width=115, height=24)
+        self.cb_output_theater.current(0)
 
         # 模板
         self.path_frame.place(height=85)
@@ -787,7 +798,7 @@ class Tab_Two(FilesTab):
     # --------- 行为逻辑 ---------
 
     def btn_add_files(self):
-        files = filedialog.askopenfilenames(title='选择文件',    filetypes=[
+        files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
             ("Image files", "*.png *.bmp"),
             ("PNG", "*.png"),
             ("BMP", "*.bmp")
@@ -804,14 +815,14 @@ class Tab_Two(FilesTab):
 
         index = self.lb_files.curselection()[0]
         file = self.full_paths[index]
-        # print(file)
+
         render_img = Image.open(file).convert(
             "RGBA")  # self.render_preview(file)
         self.show_preview(render_img)
 
     # # 图片预览
     # def render_preview(self, file):
-    #     export_img = file[:-4] + '.png'
+    #     export_img = file[:-4] + ".png"
 
     #     palette = self.get_palette(file_name=file)
 
@@ -825,9 +836,9 @@ class Tab_Two(FilesTab):
     def show_preview(self, render_img, palette=None):
 
         # 填充边框颜色
-        border_color1 = (255, 255, 255, 255) if render_img.mode == 'RGBA' else (
+        border_color1 = (255, 255, 255, 255) if render_img.mode == "RGBA" else (
             255, 255, 255)
-        border_color2 = (225, 225, 225, 255) if render_img.mode == 'RGBA' else (
+        border_color2 = (225, 225, 225, 255) if render_img.mode == "RGBA" else (
             225, 225, 225)
 
         p_width = self.image_label_width - 8
@@ -880,17 +891,17 @@ class Tab_Two(FilesTab):
         self.path_out_floder = self.ent_out_floder.get()
         self.path_template = self.ent_template.get()
 
-        SAVE_ADDITION = ''
+        SAVE_ADDITION = ""
 
         if not Path(self.path_pal).is_file():
-            messagebox.showwarning('警告', '未选择色盘')
+            messagebox.showwarning("警告", "未选择色盘")
             return
 
-        prefix = self.ent_prefix.get().split('\n')[0]
-        suffix = self.ent_suffix.get().split('\n')[0]
+        prefix = self.ent_prefix.get().split("\n")[0]
+        suffix = self.ent_suffix.get().split("\n")[0]
 
         if not suffix:
-            suffix = tuple(['.png', '.bmp'])
+            suffix = tuple([".png", ".bmp"])
 
         self.lst_files = self.full_paths.copy()
         # 选取的文件
@@ -903,7 +914,7 @@ class Tab_Two(FilesTab):
         ]
 
         # 批处理文件夹
-        # if not self.path_out_floder == '' and Path(self.path_out_floder).is_dir():
+        # if not self.path_out_floder == "" and Path(self.path_out_floder).is_dir():
 
         #     floder_files = [
         #         str(p)
@@ -915,10 +926,10 @@ class Tab_Two(FilesTab):
         #     ]
         #     render_files += floder_files
         if not render_files:
-            messagebox.showwarning('Warning', 'Not file choosed')
+            messagebox.showwarning("Warning", "Not file choosed")
             return
 
-        self.log(f'开始导出已选择的{len(render_files)}个文件')
+        self.log(f"开始导出已选择的{len(render_files)}个文件")
         self.save_config()
         self.load_config()
 
@@ -928,17 +939,24 @@ class Tab_Two(FilesTab):
         search_tem_mode = self.var_specify_template.get() == "模板文件夹匹配"
 
         if temp_mode:
-            self.log(f'使用选中模板导出')
+            self.log(f"使用选中模板导出")
 
         if search_img_mode:
-            self.log(f'使用图像文件夹导出')
+            self.log(f"使用图像文件夹导出")
 
         if search_tem_mode:
-            self.log(f'使用模板文件夹导出')
+            self.log(f"使用模板文件夹导出")
 
         if not (search_img_mode or temp_mode or search_tem_mode):
-            messagebox.showwarning('警告', '未选择导出格式')
+            messagebox.showwarning("警告", "未选择导出格式")
             return
+
+        # 气候
+        if self.var_output_theater.get() == "按选中模板气候":
+            output_theaters = self.path_template[-4:]
+        else:
+            output_theaters = "." + self.var_output_theater.get()[3:].lower()
+        print(output_theaters)
 
         # 调用
 
@@ -948,163 +966,160 @@ class Tab_Two(FilesTab):
             import_img = img_file
             img_file_name = Path(import_img).name
             import_template = self.path_template
-            temp_file_name = Path(import_template).name
 
             tem_floder = Path(import_template).parent
 
-            text_save_name = self.ent_save_name.get().split('\n')[0]
+            text_save_name = self.ent_save_name.get().split("\n")[0]
 
             # 色盘
 
-            self.log(f'正在导出第{i+1}个文件 {import_img}')
+            self.log(f"正在导出第{i+1}个文件 {import_img}")
             # 模板
             if temp_mode:
-                # print("使用选中模板")
+
                 template_tmp = import_template
-                palette = self.get_palette(file_name=temp_file_name)
+
+                pal_name = "iso" + output_theaters[1:] + ".pal"
+                pal_floder = Path(self.path_pal).parent
+                pal_file = pal_floder / pal_name
+                palette = PalFile(pal_file).palette
 
                 tmp = TmpFile(template_tmp)
 
-                print(f'template_tmp{template_tmp}import_img{import_img}')
                 impt.import_image_to_tmp(
                     tmp, import_img, palette, background_index=0,
-                    auto_radar=self.var_auto_radar.get() == 'enable',
-                    change_normal=self.var_impt_img.get() == 'enable',
-                    change_extra=self.var_impt_ext.get() == 'enable')
+                    auto_radar=self.var_auto_radar.get() == "enable",
+                    change_normal=self.var_impt_img.get() == "enable",
+                    change_extra=self.var_impt_ext.get() == "enable")
 
                 # 保存名称
-                if not text_save_name == '':
-                    import_save = self.path_out_floder + text_save_name + '/' + \
+                if not text_save_name == "":
+                    import_save = self.path_out_floder + text_save_name + "/" + \
                         str(save_index).zfill(
-                            len(str(len(render_files)))) + template_tmp[-4:]
+                            len(str(len(render_files)))) + output_theaters
                     save_index += 1
                 else:
-                    import_save = self.path_out_floder + '/' + \
+                    import_save = self.path_out_floder + "/" + \
                         str(Path(import_img).name)[
-                            :-4] + SAVE_ADDITION + template_tmp[-4:]
+                            :-4] + SAVE_ADDITION + output_theaters
 
                 impt.save_tmpfile(tmp, import_save)
+                self.log(f"已导出第{i+1}个文件 {import_save}")
                 continue
 
             if search_img_mode:
-                find_any = False
-                # 遍历气候类型
-                for t in self.theaters:
-                    if Path(import_img[:-4] + t).is_file():
-                        find_any = True
 
-                        pal_name = 'iso' + t[1:] + '.pal'
-                        pal_floder = Path(self.path_pal).parent
-                        pal_file = pal_floder / pal_name
-                        palette = PalFile(pal_file).palette
+                if Path(import_img[:-4] + output_theaters).is_file():
 
-                        template_tmp = import_img[:-4] + t
+                    pal_name = "iso" + output_theaters[1:] + ".pal"
+                    pal_floder = Path(self.path_pal).parent
+                    pal_file = pal_floder / pal_name
+                    palette = PalFile(pal_file).palette
 
-                        tmp = TmpFile(template_tmp)
-                        impt.import_image_to_tmp(
-                            tmp, import_img, palette, background_index=0,
-                            auto_radar=self.var_auto_radar.get() == 'enable',
-                            change_normal=self.var_impt_img.get() == 'enable',
-                            change_extra=self.var_impt_ext.get() == 'enable')
+                    template_tmp = import_img[:-4] + output_theaters
 
-                        # 保存名称
-                        if not text_save_name == '':
-                            import_save = self.path_out_floder + text_save_name + '/' + str(
-                                save_index).zfill(str(len(render_files))) + t
-                            save_index += 1
-                        else:
-                            import_save = self.path_out_floder + '/' + \
-                                str(Path(import_img).name)[
-                                    :-4] + SAVE_ADDITION + t
+                    tmp = TmpFile(template_tmp)
+                    impt.import_image_to_tmp(
+                        tmp, import_img, palette, background_index=0,
+                        auto_radar=self.var_auto_radar.get() == "enable",
+                        change_normal=self.var_impt_img.get() == "enable",
+                        change_extra=self.var_impt_ext.get() == "enable")
+                    
+                    # 保存名称
+                    if not text_save_name == "":
+                        import_save = self.path_out_floder + text_save_name + "/" + str(
+                            save_index).zfill(str(len(render_files))) + output_theaters
+                        save_index += 1
+                    else:
+                        import_save = self.path_out_floder + "/" + \
+                            str(Path(import_img).name)[
+                                :-4] + SAVE_ADDITION + output_theaters
+                        
+                    impt.save_tmpfile(tmp, import_save)
+                    self.log(f"已导出第{i+1}个文件 {import_save}")
 
-                        impt.save_tmpfile(tmp, import_save)
-
-                if not find_any:
-                    self.log(f'警告 - 文件 {import_img}\n未找到对应模板', 'WARN')
+                else:
+                    self.log(f"警告 - 文件 {import_img}\n未找到对应模板{import_img[:-4] + output_theaters}", "WARN")
                 continue
 
             if search_tem_mode:
-                find_any = False
-                # 遍历气候类型
-                for t in self.theaters:
-                    if Path(str(tem_floder / img_file_name[:-4]) + t).is_file():
-                        find_any = True
 
-                        pal_name = 'iso' + t[1:] + '.pal'
-                        pal_floder = Path(self.path_pal).parent
-                        pal_file = pal_floder / pal_name
-                        palette = PalFile(pal_file).palette
+                if Path(str(tem_floder / img_file_name[:-4]) + output_theaters).is_file():
 
-                        template_tmp = str(tem_floder / img_file_name[:-4]) + t
+                    pal_name = "iso" + output_theaters[1:] + ".pal"
+                    pal_floder = Path(self.path_pal).parent
+                    pal_file = pal_floder / pal_name
+                    palette = PalFile(pal_file).palette
 
-                        tmp = TmpFile(template_tmp)
-                        impt.import_image_to_tmp(
-                            tmp, import_img, palette, background_index=0,
-                            auto_radar=self.var_auto_radar.get() == 'enable',
-                            change_normal=self.var_impt_img.get() == 'enable',
-                            change_extra=self.var_impt_ext.get() == 'enable')
+                    template_tmp = str(tem_floder / img_file_name[:-4]) + output_theaters
 
-                        # 保存名称
-                        if not text_save_name == '':
-                            import_save = self.path_out_floder + text_save_name + '/' + str(
-                                save_index).zfill(str(len(render_files))) + t
-                            save_index += 1
-                        else:
-                            import_save = self.path_out_floder + '/' + \
-                                str(Path(import_img).name)[
-                                    :-4] + SAVE_ADDITION + t
+                    tmp = TmpFile(template_tmp)
+                    impt.import_image_to_tmp(
+                        tmp, import_img, palette, background_index=0,
+                        auto_radar=self.var_auto_radar.get() == "enable",
+                        change_normal=self.var_impt_img.get() == "enable",
+                        change_extra=self.var_impt_ext.get() == "enable")
+                    # 保存名称
+                    if not text_save_name == "":
+                        import_save = self.path_out_floder + text_save_name + "/" + str(
+                            save_index).zfill(str(len(render_files))) + output_theaters
+                        save_index += 1
+                    else:
+                        import_save = self.path_out_floder + "/" + \
+                            str(Path(import_img).name)[
+                                :-4] + SAVE_ADDITION + output_theaters
+            
+                    impt.save_tmpfile(tmp, import_save)
+                    self.log(f"已导出第{i+1}个文件 {import_save}")
 
-                        impt.save_tmpfile(tmp, import_save)
+                else:
+                    self.log(f"警告 - 文件 {import_img}\n未找到对应模板{str(tem_floder / img_file_name[:-4]) + output_theaters}", "WARN")
 
-                if not find_any:
-                    self.log(f'警告 - 文件 {import_img}\n未找到对应模板', 'WARN')
-                continue
-
-        self.log(f'已导出全部文件', 'SUCCESS')
+        self.log(f"已导出全部文件", "SUCCESS")
 
 
 class App(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        self.title('神秘东西')
-        self.geometry('700x720')
+        self.title("神秘东西")
+        self.geometry("800x720")
 
         notebook = ttk.Notebook(self)
-        notebook.place(x=10, y=10, width=680, height=600)
+        notebook.place(x=10, y=10, width=780, height=600)
 
         # 第一标签页
         self.tab_files = Tab_One(notebook, self.append_log)
-        notebook.add(self.tab_files, text='导出图像')
+        notebook.add(self.tab_files, text="导出图像")
 
         # 第二标签页
         self.tab_state = Tab_Two(notebook, self.append_log)
-        notebook.add(self.tab_state, text='导入图像')
+        notebook.add(self.tab_state, text="导入图像")
 
         notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
         self._init_log()
 
     def _init_log(self):
         log_frame = ttk.Frame(self)
-        log_frame.place(x=20, y=450, width=660, height=250)
+        log_frame.place(x=20, y=450, width=760, height=250)
 
-        ttk.Label(log_frame, text='Log:', relief='flat').pack(anchor=tk.W)
+        ttk.Label(log_frame, text="Log:", relief="flat").pack(anchor=tk.W)
 
         self.txt_log = tk.Text(log_frame, height=6, font=10,
                                state=tk.DISABLED, wrap=tk.WORD)
         self.txt_log.pack(fill=tk.BOTH, expand=True)
         self.txt_log.tag_config(
-            'INFO', foreground="#858585", font=('SimSun', 10))
+            "INFO", foreground="#858585", font=("SimSun", 10))
         self.txt_log.tag_config(
-            'WARN', foreground='orange', font=('SimSun', 10, 'bold'))
-        self.txt_log.tag_config('ERROR', foreground='red',
-                                font=('SimSun', 10, 'bold'))
+            "WARN", foreground="orange", font=("SimSun", 10, "bold"))
+        self.txt_log.tag_config("ERROR", foreground="red",
+                                font=("SimSun", 10, "bold"))
         self.txt_log.tag_config(
-            'SUCCESS', foreground="#36BB53", font=('SimSun', 10))
+            "SUCCESS", foreground="#36BB53", font=("SimSun", 10))
 
-    def append_log(self, msg, level='INFO'):
+    def append_log(self, msg, level="INFO"):
         self.txt_log.config(state=tk.NORMAL)
-        self.txt_log.insert(tk.END, '[' + level + ']' + msg + '\n', level)
+        self.txt_log.insert(tk.END, "[" + level + "]" + msg + "\n", level)
         self.txt_log.see(tk.END)
         self.txt_log.config(state=tk.DISABLED)
         self.txt_log.update_idletasks()
@@ -1117,6 +1132,6 @@ class App(tk.Tk):
             current_frame.load_config()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = App()
     app.mainloop()
