@@ -5,7 +5,6 @@ from PIL import Image
 from logic.modules import TmpFile
 import logic.color as cl
 from PIL import Image
-import numpy as np
 
 
 def get_radar_color(radar_count):
@@ -194,10 +193,10 @@ def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, background_index=0, 
     # background RGB
 
     br, bgc, bb, _ = pal[background_index]
-    print(f'bg{br, bgc, bb}')
+    # print(f'bg{br, bgc, bb}')
     # if (br, bgc, bb) == (0, 0, 125):
     #     br, bgc, bb = 3, 3, 126
-    #     # 问就是神秘WW
+    #     # 问就是神秘Pallete studio干的
 
     bg_rgb = (br, bgc, bb)
 

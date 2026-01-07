@@ -3,10 +3,14 @@ from PIL import Image
 import numpy as np
 from logic.modules import TmpTile, TmpFile
 
+def map_z_byte(b):
+    Z_DATA_LEVEL_MUIL = 8
+    v = int(max(0, min(255, b * Z_DATA_LEVEL_MUIL)))
+    return (v, v, v, 255)
+
 def tile_image(tile: TmpTile, bw, bh, palette, background_index=0):
     """
-    渲染单个 tile 的 TileData 成 RGBA 图像（diamond scanline）。
-    background_index 被认为是透明色。
+    渲染单个 tile 的 Normal 部分图像 (TileData) 
     """
     img = Image.new("RGBA", (bw, bh), (0,0,0,0))
     px = img.load()
@@ -45,8 +49,7 @@ def tile_image(tile: TmpTile, bw, bh, palette, background_index=0):
 
 def extra_image(tile: TmpTile, palette, background_index=0):
     """
-    渲染 ExtraData（rectangular）为 RGBA 图片。
-    ExtraData 是 row-major 大小 ExtraWidth x ExtraHeight，值 0 被视为透明。
+    渲染单个 tile 的 Extra 部分图像 (ExtraData)
     返回 (img, extra_w, extra_h)
     """
     if tile.ExtraData is None or tile.ExtraWidth == 0 or tile.ExtraHeight == 0:
@@ -68,7 +71,12 @@ def extra_image(tile: TmpTile, palette, background_index=0):
                 px[x, y] = (r,g,b,a)
     return img, w, h
 
-def render_full_png(tmp: TmpFile, palette, output_img, render_extra=True, background_index=0, out_png=True,out_bmp=False):
+def render_full_png(tmp: TmpFile, palette, output_img, render_extra=True, out_png=True,out_bmp=False):
+    """
+    组合单个 tile 的 Normal 和 Extra 图像并保存
+    返回 img 作为界面预览
+    """
+    background_index = 0
     X, Y, R, B = tmp.compute_canvas_bounds()
     w = R - X
     h = B - Y
@@ -111,11 +119,10 @@ def render_full_png(tmp: TmpFile, palette, output_img, render_extra=True, backgr
         
     return save_canvas
 
-def tile_Zdata(tile: TmpTile, bw, bh, z_palette=None):
+def tile_Zdata(tile: TmpTile, bw, bh):
     """
     把 tile.ZData（如果存在）渲染为一张图片：
-    - 值 0 和 205 被视为透明（与 C# isZData skip 条件相同）
-    - 其他字节用 z_palette（若提供）作为颜色索引；否则把数值映射成灰阶 alpha 显示
+    - 值 0 视为透明
     """
     if tile.ZData is None:
         return None
@@ -127,13 +134,7 @@ def tile_Zdata(tile: TmpTile, bw, bh, z_palette=None):
     width = 0
     half = bh // 2
 
-    # helper to map z byte to color
-    def map_z_byte(b):
-        if z_palette:
-            return z_palette[b]
-        # default: map value to gray (scaled), alpha full
-        v = int(max(0, min(255, b))) * 10
-        return (v, v, v, 255)
+
 
     for y in range(half):
         width += 4
@@ -161,7 +162,7 @@ def tile_Zdata(tile: TmpTile, bw, bh, z_palette=None):
 
     return img
 
-def extra_ZData(tile: TmpTile, z_palette=None):
+def extra_ZData(tile: TmpTile):
     """
     渲染 ExtraZData（rectangular），按 ExtraWidth x ExtraHeight，0/205 视为透明。
     返回 (img, w, h)
@@ -174,12 +175,6 @@ def extra_ZData(tile: TmpTile, z_palette=None):
     px = img.load()
     ptr = 0
 
-    def map_z_byte(b):
-        if z_palette:
-            return z_palette[b]
-        v = int(max(0, min(255, b)))
-        return (v, v, v, 255)
-
     for y in range(h):
         for x in range(w):
             if ptr >= len(tile.ExtraZData):
@@ -191,7 +186,7 @@ def extra_ZData(tile: TmpTile, z_palette=None):
             px[x, y] = map_z_byte(zb)
     return img, w, h
 
-def render_full_ZData(tmp: TmpFile, out_z_png, z_palette=None):
+def render_full_ZData(tmp: TmpFile, out_z_png, out_png=False,out_bmp=False):
     '''
     TBD
 
@@ -207,13 +202,13 @@ def render_full_ZData(tmp: TmpFile, out_z_png, z_palette=None):
         if tile is None:
             continue
         if tile.has_z and tile.ZData:
-            z_img = tile_Zdata(tile, tmp.BlockWidth, tmp.BlockHeight, z_palette)
+            z_img = tile_Zdata(tile, tmp.BlockWidth, tmp.BlockHeight)
             if z_img:
                 ox = tile.X - X
                 oy = tile.Y - tile.Height * half - Y
                 canvas.alpha_composite(z_img, (ox, oy))
         if tile.ExtraZData:
-            ez_img, ew, eh = extra_ZData(tile, z_palette)
+            ez_img, ew, eh = extra_ZData(tile)
             if ez_img:
                 ex = tile.ExtraX - X
                 ey = tile.ExtraY - tile.Height * half - Y
@@ -226,6 +221,13 @@ def render_full_ZData(tmp: TmpFile, out_z_png, z_palette=None):
     arr[mask] = [r,g,b,a]
     save_canvas = Image.fromarray(arr, mode="RGBA")
 
-    save_canvas.save(out_z_png)
-    print("Saved Z-only:", out_z_png)
+    if out_png:
+        save_canvas.save(out_z_png+'_z.png')
+        print("Saved:", out_z_png+'_z.png')
+
+    if out_bmp:
+        save_canvas.save(out_z_png+'_z.bmp')
+        print("Saved:", out_z_png+'_z.bmp')
+        
+    print("Saved Z-only:", out_z_png+'_z')
     return save_canvas
