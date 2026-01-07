@@ -181,23 +181,29 @@ class FilesTab(ttk.Frame):
 
         # 2) Label 前缀
         self.lb_prefix = ttk.Label(self.ckb_frame, text='前缀：')
+        self.lb_prefix.place(x=150, y=0, width=80, height=25)
 
         self.ent_prefix = tk.Entry(
             self.ckb_frame, relief='flat', insertwidth=1)
+        self.ent_prefix.place(x=185, y=2, width=104, height=20)
         ToolTip(self.ent_prefix, "只转换带有该前缀的文件")
 
         # 3) Label 后缀
         self.lb_suffix = ttk.Label(self.ckb_frame, text='后缀：')
+        self.lb_suffix.place(x=150, y=28, width=80, height=25)
 
         self.ent_suffix = tk.Entry(
             self.ckb_frame, relief='flat', insertwidth=1)
+        self.ent_suffix.place(x=185, y=30, width=104, height=20)
         ToolTip(self.ent_suffix, "只转换带有该后缀的文件，包含文件后缀名\n符合该后缀的文件将跳过气候检查")
 
         # 4) Label 导出名称
         self.lb_save_name = ttk.Label(self.ckb_frame, text='导出名称：')
+        self.lb_save_name.place(x=150, y=58, width=80, height=25)
 
         self.ent_save_name = tk.Entry(
             self.ckb_frame, relief='flat', insertwidth=1)
+        self.ent_save_name.place(x=208, y=60, width=81, height=20)
 
         # 按钮区
         self.btn_frame = ttk.Frame(self)
@@ -494,12 +500,7 @@ class Tab_One(FilesTab):
         # 导出设置
         self.ckb_frame.place(x=270, y=90, width=400, height=300)
         
-        self.lb_prefix.place(x=150, y=0, width=80, height=25)
-        self.ent_prefix.place(x=185, y=2, width=104, height=20)
-        self.lb_suffix.place(x=150, y=28, width=80, height=25)
-        self.ent_suffix.place(x=185, y=30, width=104, height=20)
-        self.lb_save_name.place(x=150, y=58, width=80, height=25)
-        self.ent_save_name.place(x=208, y=60, width=81, height=20)
+
         
 
         # 导出 PNG
@@ -528,7 +529,7 @@ class Tab_One(FilesTab):
 
         self.ckb_zdata_mode.place(x=0, y=75, width=100, height=25)
 
-        ToolTip(self.ckb_auto_pal, "导出图像的 Zdata")
+        ToolTip(self.ckb_zdata_mode, "导出图像的 Zdata\n原始值 0-29对应图像 (0,0,0) 到 (232,232,232)")
 
         ToolTip(self.ent_save_name, "导出文件命名为[此处输入文本][01起始的序号].[png/bmp]")
 
