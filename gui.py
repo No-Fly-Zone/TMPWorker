@@ -593,14 +593,22 @@ class Tab_One(FilesTab):
                     if pixels[x, y] == old_color:
                         pixels[x, y] = new_color
 
+
         # 根据预览大小缩放
+        max_w = self.image_label_width - 4
+        max_h = self.image_label_height - 4
+
+        print(max_w, max_h)
         width, height = render_img.size
+        if width > max_w:
+            render_img = render_img.resize(
+                (max_w, max(int(height * max_w / width), 1)), Image.LANCZOS)
 
-        w = self.image_label.winfo_width()
-        h = self.image_label.winfo_height()
-
-        if width < w or height < h:
-            render_img.resize((w, h), Image.LANCZOS)
+        print(width, height)
+        width, height = render_img.size
+        if height > max_h:
+            render_img = render_img.resize(
+                (max(int(width * max_h / height), 1), max_h), Image.LANCZOS)
 
         temp_img = Image.new(
             render_img.mode, (p_width + 2, p_height + 2), border_color1)
