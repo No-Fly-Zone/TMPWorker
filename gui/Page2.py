@@ -55,12 +55,12 @@ class Tab_Two(FilesTab):
         self.ckb_impt_img = ttk.Checkbutton(
             self.ckb_frame, text="导入图像", variable=self.var_impt_img, onvalue="enable", offvalue="disable")
         self.ckb_impt_img.place(x=0, y=50, width=100, height=25)
-        ToolTip(self.ckb_impt_img, "导入 Normal 部分的图像")
+        ToolTip(self.ckb_impt_img, "导入 Normal 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
 
         self.ckb_impt_ext = ttk.Checkbutton(
             self.ckb_frame, text="导入额外图像", variable=self.var_impt_ext, onvalue="enable", offvalue="disable")
         self.ckb_impt_ext.place(x=0, y=75, width=100, height=25)
-        ToolTip(self.ckb_impt_ext, "导入 Extra 部分的图像")
+        ToolTip(self.ckb_impt_ext, "导入 Extra 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
 
         # 指定模板
         self.var_specify_template = tk.StringVar()
@@ -158,6 +158,7 @@ class Tab_Two(FilesTab):
             return
 
         self.log(f"开始导出已选择的{len(render_files)}个文件")
+        # self.log(f"{render_files}")
         self.save_config()
         self.load_config()
 
@@ -207,11 +208,18 @@ class Tab_Two(FilesTab):
             if temp_mode:
 
                 template_tmp = import_template
+                if not Path(template_tmp).is_file():
+                    self.log(
+                        f"文件 {import_img}\n未找到对应模板{template_tmp}", "ERROR")
+                    break
 
-                pal_name = "iso" + output_theaters[1:] + ".pal"
-                pal_floder = Path(self.path_pal).parent
-                pal_file = pal_floder / pal_name
-                palette = PalFile(pal_file).palette
+                if self.var_auto_pal.get() == "enable":
+                    pal_name = "iso" + output_theaters[1:] + ".pal"
+                    pal_floder = Path(self.path_pal).parent
+                    pal_file = pal_floder / pal_name
+                    palette = PalFile(pal_file).palette
+                else:
+                    palette = PalFile(self.path_pal).palette
 
                 tmp = TmpFile(template_tmp)
 
@@ -236,6 +244,13 @@ class Tab_Two(FilesTab):
                     import_save = Path(self.path_out_floder) / (
                         str(Path(import_img).name)[
                             :-4] + SAVE_ADDITION + output_theaters)
+                    
+                # 确保保存路径存在
+                src = Path(template_tmp)
+                if not Path(import_save).exists():
+                    Path(import_save).parent.mkdir(parents=True, exist_ok=True)
+                    with src.open("rb") as f_src, Path(import_save).open("wb") as f_dst:
+                        f_dst.write(f_src.read())
 
                 impt.save_tmpfile(tmp, import_save)
                 self.log(f"已导出第{i+1}个文件 {import_save}")
@@ -243,12 +258,26 @@ class Tab_Two(FilesTab):
 
             if search_img_mode:
 
+                template_tmp = ""
                 if Path(import_img[:-4] + output_theaters).is_file():
+                    template_tmp = import_img[:-4] + output_theaters
+                else:
+                    for t in self.theaters:
+                        if Path(import_img[:-4] + t).is_file():
+                            template_tmp = import_img[:-4] + t
+                            break
+                
+                if Path(template_tmp).is_file():
 
-                    pal_name = "iso" + output_theaters[1:] + ".pal"
-                    pal_floder = Path(self.path_pal).parent
-                    pal_file = pal_floder / pal_name
-                    palette = PalFile(pal_file).palette
+                    self.log(f"匹配到模板{template_tmp}", "INFO")
+
+                    if self.var_auto_pal.get() == "enable":
+                        pal_name = "iso" + output_theaters[1:] + ".pal"
+                        pal_floder = Path(self.path_pal).parent
+                        pal_file = pal_floder / pal_name
+                        palette = PalFile(pal_file).palette
+                    else:
+                        palette = PalFile(self.path_pal).palette
 
                     template_tmp = import_img[:-4] + output_theaters
 
@@ -275,24 +304,45 @@ class Tab_Two(FilesTab):
                         import_save = Path(self.path_out_floder) / (
                             str(Path(import_img).name)[
                                 :-4] + SAVE_ADDITION + output_theaters)
+                        
+                    # 确保保存路径存在
+                    src = Path(template_tmp)
+                    if not Path(import_save).exists():
+                        Path(import_save).parent.mkdir(parents=True, exist_ok=True)
+                        with src.open("rb") as f_src, Path(import_save).open("wb") as f_dst:
+                            f_dst.write(f_src.read())
 
                     impt.save_tmpfile(tmp, import_save)
                     self.log(f"已导出第{i+1}个文件 {import_save}")
 
                 else:
                     self.log(
-                        f"文件 {import_img}\n未找到对应模板{import_img[:-4] + output_theaters}", "WARN")
+                        f"文件 {import_img}\n未找到对应模板{import_img[:-4] + output_theaters}", "ERROR")
                     log_warns += 1
                 continue
 
             if search_tem_mode:
 
+                template_tmp = ""
                 if Path(str(tem_floder / img_file_name[:-4]) + output_theaters).is_file():
+                    template_tmp = str(tem_floder / img_file_name[:-4]) + output_theaters
+                else:
+                    for t in self.theaters:
+                        if Path(str(tem_floder / img_file_name[:-4]) + t).is_file():
+                            template_tmp = str(tem_floder / img_file_name[:-4]) + t
+                            break
 
-                    pal_name = "iso" + output_theaters[1:] + ".pal"
-                    pal_floder = Path(self.path_pal).parent
-                    pal_file = pal_floder / pal_name
-                    palette = PalFile(pal_file).palette
+                if Path(template_tmp).is_file():
+                    
+                    self.log(f"匹配到模板{template_tmp}", "INFO")
+
+                    if self.var_auto_pal.get() == "enable":
+                        pal_name = "iso" + output_theaters[1:] + ".pal"
+                        pal_floder = Path(self.path_pal).parent
+                        pal_file = pal_floder / pal_name
+                        palette = PalFile(pal_file).palette
+                    else:
+                        palette = PalFile(self.path_pal).palette
 
                     template_tmp = str(
                         tem_floder / img_file_name[:-4]) + output_theaters
@@ -320,13 +370,20 @@ class Tab_Two(FilesTab):
                         import_save = Path(self.path_out_floder) / \
                             str(Path(import_img).name)[
                                 :-4] + SAVE_ADDITION + output_theaters
+                        
+                    # 确保保存路径存在
+                    src = Path(template_tmp)
+                    if not Path(import_save).exists():
+                        Path(import_save).parent.mkdir(parents=True, exist_ok=True)
+                        with src.open("rb") as f_src, Path(import_save).open("wb") as f_dst:
+                            f_dst.write(f_src.read())
 
                     impt.save_tmpfile(tmp, import_save)
                     self.log(f"已导出第{i+1}个文件 {import_save}")
 
                 else:
                     self.log(
-                        f"文件 {import_img}\n未找到对应模板{str(tem_floder / img_file_name[:-4]) + output_theaters}", "WARN")
+                        f"文件 {import_img}\n未找到对应模板{str(tem_floder / img_file_name[:-4]) + output_theaters}", "ERROR")
                     log_warns += 1
 
         self.log(f"", "PASS")

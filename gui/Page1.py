@@ -223,6 +223,7 @@ class Tab_One(FilesTab):
 
             text_save_name = self.ent_save_name.get().split("\n")[0]
             print(self.path_out_floder)
+            
             # 指定保存名称
             if not text_save_name == "":
                 output_img = str(self.path_out_floder + text_save_name + "/" +
@@ -234,6 +235,10 @@ class Tab_One(FilesTab):
                     "/" + str(Path(file).name)[:-4]
 
             tmp = TmpFile(file)
+
+            if not Path(self.path_out_floder).exists():
+                Path(self.path_out_floder).mkdir(parents=True, exist_ok=True)
+
 
             if self.var_zdata_mode.get() == "disable":
                 re_image = self.safe_call(render.render_full_png,

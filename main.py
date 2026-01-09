@@ -15,7 +15,7 @@ from gui.Page1 import Tab_One
 from gui.Page2 import Tab_Two
 from gui.Page3 import Tab_Three
 
-# pyinstaller -w gui.py
+# pyinstaller -w main.py
 
 
 def get_base_path():
