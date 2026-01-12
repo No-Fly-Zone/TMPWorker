@@ -222,13 +222,17 @@ class FilesTab(ttk.Frame):
     # --------- 行为逻辑 ---------
 
     def get_palette(self, file_name=None):
-        print(self.var_auto_pal.get())
         if self.var_auto_pal.get() == "enable":
             pal_name = "iso" + file_name[-3:] + ".pal"
             print(pal_name)
             pal_floder = Path(self.path_pal).parent
             pal_file = pal_floder / pal_name
-            palette = PalFile(pal_file).palette
+
+            if Path(pal_file).is_file():
+                palette = PalFile(pal_file).palette
+            else:
+                self.log(f"未找到色盘{pal_file}\n使用选中色盘","WARN")
+                palette = PalFile(self.path_pal).palette
         else:
             palette = PalFile(self.path_pal).palette
         return palette
@@ -332,6 +336,14 @@ class FilesTab(ttk.Frame):
     def render_preview(self, file):
         export_img = file[:-4] + ".png"
 
+
+        tmp = TmpFile(file)
+
+        if hasattr(self, 'var_zdata_mode') and self.var_zdata_mode is not None:
+            if self.var_zdata_mode.get() == "enable":
+                render_img = render.render_full_ZData(tmp, export_img)
+                return render_img, None
+            
         if self.var_auto_pal.get() == "enable":
             pal_name = "iso" + file[-3:] + ".pal"
 
@@ -339,16 +351,15 @@ class FilesTab(ttk.Frame):
             self.path_pal = self.ent_pal.get()
             pal_floder = Path(self.path_pal).parent
             pal_file = pal_floder / pal_name
-
-            palette = PalFile(pal_file).palette
+            
+            if Path(pal_file).is_file():
+                palette = PalFile(pal_file).palette
+            else:
+                self.log(f"未找到色盘{pal_file}\n使用选中色盘","WARN")
+                palette = PalFile(self.path_pal).palette
         else:
             palette = PalFile(self.path_pal).palette
-        tmp = TmpFile(file)
 
-        if hasattr(self, 'var_zdata_mode') and self.var_zdata_mode is not None:
-            if self.var_zdata_mode.get() == "enable":
-                render_img = render.render_full_ZData(tmp, export_img)
-                return render_img, palette
         render_img = render.render_full_png(
             tmp, palette, export_img,
             render_extra=True, out_bmp=False, out_png=False)

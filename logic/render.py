@@ -229,5 +229,4 @@ def render_full_ZData(tmp: TmpFile, out_z_png, out_png=False,out_bmp=False):
         save_canvas.save(out_z_png+'_z.bmp')
         print("Saved:", out_z_png+'_z.bmp')
         
-    print("Saved Z-only:", out_z_png+'_z')
     return save_canvas

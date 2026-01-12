@@ -52,49 +52,13 @@ CONFIG_PATH = Path(CONFIG_DIR) / CONFIG_FILE
 
 # ---------------- 提示框 ----------------
 
-
-class ToolTip:
-    def __init__(self, widget, text):
-        self.widget = widget
-        self.text = text
-        self.tipwindow = None
-
-        widget.bind("<Enter>", self.show_tip)
-        widget.bind("<Leave>", self.hide_tip)
-
-    def show_tip(self, event=None):
-        if self.tipwindow or not self.text:
-            return
-
-        x = self.widget.winfo_rootx() + 20
-        y = self.widget.winfo_rooty() + 25
-
-        self.tipwindow = tw = tk.Toplevel(self.widget)
-        tw.wm_overrideredirect(True)   # 去掉窗口边框
-        tw.wm_geometry(f"+{x}+{y}")
-
-        label = tk.Label(
-            tw,
-            text=self.text,
-            background="#ffffff",
-            relief="solid",
-            borderwidth=1,
-            justify="left"
-        )
-        label.pack(ipadx=4, ipady=2)
-
-    def hide_tip(self, event=None):
-        if self.tipwindow:
-            self.tipwindow.destroy()
-            self.tipwindow = None
-
 # ---------------- 标签页类 ----------------
 
 class App(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        self.title("神秘东西")
+        self.title("TMP 转换")
         self.geometry("800x720")
 
         notebook = ttk.Notebook(self)
