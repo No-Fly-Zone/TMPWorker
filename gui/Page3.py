@@ -5,7 +5,7 @@ from PIL import Image, ImageTk
 
 from logic.modules import TmpFile, PalFile
 import logic.image as impt
-# import logic.render as render
+import logic.render as render
 
 from pathlib import Path
 # import sys
@@ -19,6 +19,12 @@ class Tab_Three(FilesTab):
         super()._init_ui()
 
         self.lb_show_type = "TMP"
+
+        self.ent_template.place_forget()
+        self.btn_template.place_forget()
+
+        self.btn_pal_input.config(text="色盘")
+        self.btn_pal_output.config(text="色盘")
 
         # 按钮区
 
@@ -44,11 +50,40 @@ class Tab_Three(FilesTab):
         self.ent_suffix.place(x=178)
 
         self.var_auto_radar = tk.StringVar(value="enable")
+        self.var_impt_img = tk.StringVar(value="enable")
+        self.var_impt_ext = tk.StringVar(value="enable")
+
+        self.ckb_auto_radar = ttk.Checkbutton(
+            self.ckb_frame, text="自动雷达色", variable=self.var_auto_radar, onvalue="enable", offvalue="disable")
+        self.ckb_auto_radar.place(x=0, y=25, width=100, height=25)
+        ToolTip(self.ckb_auto_radar, "自动修改雷达色")
+
+        self.ckb_impt_img = ttk.Checkbutton(
+            self.ckb_frame, text="导入图像", variable=self.var_impt_img, onvalue="enable", offvalue="disable")
+        self.ckb_impt_img.place(x=0, y=50, width=100, height=25)
+        ToolTip(self.ckb_impt_img, "导入 Normal 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
+
+        self.ckb_impt_ext = ttk.Checkbutton(
+            self.ckb_frame, text="导入额外图像", variable=self.var_impt_ext, onvalue="enable", offvalue="disable")
+        self.ckb_impt_ext.place(x=0, y=75, width=100, height=25)
+        ToolTip(self.ckb_impt_ext, "导入 Extra 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
 
         # 指定模板
-
+        self.var_specify_template = tk.StringVar()
+        self.cb_specify_template = ttk.Combobox(
+            self.ckb_frame,
+            textvariable=self.var_specify_template,
+            values=("使用选中模板", "图像文件名匹配", "模板文件夹匹配"),
+            state="readonly")
+        ToolTip(self.cb_specify_template,
+                "使用选中模板：按当前预览模板导出全部文件\n"
+                "图像文件名匹配：在图像所在文件夹中选择图像同名文件\n"
+                "模板文件夹匹配：在当前选中模板所在文件夹中选择图像同名文件\n"
+                "匹配时默认使用自动色盘转换对应气候")
         ttk.Label(self.ckb_frame, text="导出模式：").place(
             x=320, y=0, width=60, height=20)
+        self.cb_specify_template.place(x=320, y=25, width=115, height=24)
+        self.cb_specify_template.current(0)
 
         self.var_output_theater = tk.StringVar()
         self.output_theaters_values = ["按选中模板气候"]
@@ -61,53 +96,155 @@ class Tab_Three(FilesTab):
             state="readonly")
         ToolTip(self.cb_output_theater,
                 "导出文件的气候类型")
-        self.cb_output_theater.place(x=320, y=20, width=115, height=24)
+        self.cb_output_theater.place(x=320, y=60, width=115, height=24)
         self.cb_output_theater.current(0)
+
+        # 模板
+        self.path_frame.place(height=85)
 
         ToolTip(self.ent_save_name,
                 "导出文件命名为[此处输入文本][01起始的序号].[气候名]\n对于导出地形，超过99后需要后续处理")
+    # --------- 行为逻辑 ---------
+
+    def btn_choose_pal_new(self):
+
+        while True:
+            pal = filedialog.askopenfilename(
+                title="选择 pal 文件",    filetypes=[("PAL files", "*.pal")])
+            if not pal:
+                self.path_pal = ""
+                self.ent_pal_input.delete(0, tk.END)
+                self.save_config()
+                return
+            if pal.endswith(".pal"):
+                self.path_pal = pal
+                self.ent_pal_input.delete(0, tk.END)
+                self.ent_pal_input.insert(0, pal)
+                self.save_config()
+                return
+            messagebox.showwarning("Warning", "Not a pal")
+
+    def btn_add_files(self):
+        files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
+            ("Image files", "*.png *.bmp"),
+            ("PNG", "*.png"),
+            ("BMP", "*.bmp")
+        ])
+        for f in files:
+            if f not in self.full_paths:
+                self.full_paths.append(f)
+                self.lb_files.insert(tk.END, Path(f).name)
+        self.save_config()
 
     # --------- 导出图像 ---------
 
+    def _get_palette(self, output_theaters):
+        '''
+        获取色盘
+        '''
+        if self.var_auto_pal.get() != "enable":
+            return PalFile(self.path_pal).palette
+
+        pal_name = f"iso{output_theaters[1:]}.pal"
+        pal_file = Path(self.path_pal).parent / pal_name
+
+        if pal_file.is_file():
+            return PalFile(pal_file).palette
+
+        self.log(f"未找到色盘{pal_file}\n使用选中色盘", "WARN")
+        return PalFile(self.path_pal).palette
+
+    def _find_template(self, mode, import_img, img_stem, output_theaters):
+        '''
+        模板查找
+        
+        mode: 匹配模式
+        img_stem: 文件名
+        '''
+
+        if mode == "temp":
+            return self.path_template if Path(self.path_template).is_file() else ""
+
+        if mode == "img":
+            img_path = Path(import_img)
+            for t in (output_theaters, *self.theaters):
+                p = img_path.with_suffix(t)
+                if p.is_file():
+                    return str(p)
+
+        if mode == "tem":
+            base = Path(self.path_template).parent / img_stem
+            for t in (output_theaters, *self.theaters):
+                p = base.with_suffix(t)
+                if p.is_file():
+                    return str(p)
+
+        return ""
+
+    def _build_save_path(self, import_img, save_index, total, output_theaters):
+        text_save_name = self.ent_save_name.get().split("\n")[0]
+
+        if text_save_name:
+            width = len(str(total))
+            name = f"{text_save_name}{str(save_index).zfill(width)}{output_theaters}"
+        else:
+            name = f"{Path(import_img).stem}{output_theaters}"
+
+        return Path(self.path_out_floder) / name
+
+    def _ensure_template_copy(self, template_tmp, save_path):
+        if save_path.exists():
+            return
+
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(template_tmp, "rb") as src, open(save_path, "wb") as dst:
+            dst.write(src.read())
+
+    def _process_one(self, import_img, template_tmp, palette, save_path):
+        tmp = TmpFile(template_tmp)
+
+        ok, size1, size2 = impt.import_image_to_tmp(
+            tmp,
+            import_img,
+            palette,
+            background_index=0,
+            auto_radar=self.var_auto_radar.get() == "enable",
+            change_normal=self.var_impt_img.get() == "enable",
+            change_extra=self.var_impt_ext.get() == "enable"
+        )
+
+        if not ok:
+            self.log(
+                f"文件 {import_img}\n与模板{template_tmp}\n"
+                f"大小不一致！\t文件大小：{size1}\t模板大小：{size2}",
+                "ERROR"
+            )
+            return False
+
+        self._ensure_template_copy(template_tmp, save_path)
+        impt.save_tmpfile(tmp, save_path)
+        return True
+
     def btn_run(self):
-        self.path_pal = self.ent_pal.get()
+        self.path_pal = self.ent_pal_input.get()
         self.path_out_floder = self.ent_out_floder.get()
         self.path_template = self.ent_template.get()
-
-        SAVE_ADDITION = ""
 
         if not Path(self.path_pal).is_file():
             messagebox.showwarning("警告", "未选择色盘")
             return
 
         prefix = self.ent_prefix.get().split("\n")[0]
-        suffix = self.ent_suffix.get().split("\n")[0]
+        suffix = self.ent_suffix.get().split("\n")[0] or (".png", ".bmp")
 
-        if not suffix:
-            suffix = tuple([".png", ".bmp"])
-
-        self.lst_files = self.full_paths.copy()
-        # 选取的文件
         render_files = [
-            str(Path(p))    # 斜杠方向
-            for p in self.lst_files
-            if Path(p).is_file() and
-            Path(p).name.startswith(prefix) and
-            Path(p).name.endswith(suffix)
+            str(Path(p))
+            for p in self.full_paths
+            if Path(p).is_file()
+            and Path(p).name.startswith(prefix)
+            and Path(p).name.endswith(suffix)
         ]
 
-        # 批处理文件夹
-        # if not self.path_out_floder == "" and Path(self.path_out_floder).is_dir():
-
-        #     floder_files = [
-        #         str(p)
-        #         for p in Path(self.path_out_floder).iterdir()
-        #         if p.is_file() and
-        #         (str(p) not in render_files) and
-        #         p.name.startswith(prefix) and
-        #         p.name.endswith(suffix)
-        #     ]
-        #     render_files += floder_files
         if not render_files:
             messagebox.showwarning("Warning", "Not file choosed")
             return
@@ -116,177 +253,61 @@ class Tab_Three(FilesTab):
         self.save_config()
         self.load_config()
 
-        # 模板
-        temp_mode = self.var_specify_template.get() == "使用选中模板"
-        search_img_mode = self.var_specify_template.get() == "图像文件名匹配"
-        search_tem_mode = self.var_specify_template.get() == "模板文件夹匹配"
+        mode_map = {
+            "使用选中模板": "temp",
+            "图像文件名匹配": "img",
+            "模板文件夹匹配": "tem",
+        }
+        mode = mode_map.get(self.var_specify_template.get())
 
-        if temp_mode:
-            self.log(f"使用选中模板导出")
-
-        if search_img_mode:
-            self.log(f"使用图像文件夹导出")
-
-        if search_tem_mode:
-            self.log(f"使用模板文件夹导出")
-
-        if not (search_img_mode or temp_mode or search_tem_mode):
+        if not mode:
             messagebox.showwarning("警告", "未选择导出格式")
             return
 
-        # 气候
         if self.var_output_theater.get() == "按选中模板气候":
             output_theaters = self.path_template[-4:]
         else:
             output_theaters = "." + self.var_output_theater.get()[3:].lower()
-        # print(output_theaters)
-
-        # 调用
 
         save_index = 1
         log_warns = 0
-        for i, img_file in enumerate(render_files):
+        total = len(render_files)
 
-            import_img = img_file
-            img_file_name = Path(import_img).name
-            import_template = self.path_template
+        for i, import_img in enumerate(render_files, 1):
+            self.log(f"正在导出第{i}个文件 {import_img}")
 
-            tem_floder = Path(import_template).parent
+            template_tmp = self._find_template(
+                mode,
+                import_img,
+                Path(import_img).stem,
+                output_theaters
+            )
 
-            text_save_name = self.ent_save_name.get().split("\n")[0]
-
-            # 色盘
-
-            self.log(f"正在导出第{i+1}个文件 {import_img}")
-            # 模板
-            if temp_mode:
-
-                template_tmp = import_template
-
-                pal_name = "iso" + output_theaters[1:] + ".pal"
-                pal_floder = Path(self.path_pal).parent
-                pal_file = pal_floder / pal_name
-                palette = PalFile(pal_file).palette
-
-                tmp = TmpFile(template_tmp)
-
-                re_is_size, re_size_1, re_size_2 = impt.import_image_to_tmp(
-                    tmp, import_img, palette, background_index=0,
-                    auto_radar=self.var_auto_radar.get() == "enable",
-                    change_normal=self.var_impt_img.get() == "enable",
-                    change_extra=self.var_impt_ext.get() == "enable")
-
-                if not re_is_size:
-                    self.log(
-                        f"文件 {import_img}\n与模板{template_tmp}\n大小不一致！\t文件大小：{re_size_1}\t模板大小：{re_size_2}", "ERROR")
-                    log_warns += 1
-                    continue
-
-                # 保存名称
-                if not text_save_name == "":
-                    import_save = Path(self.path_out_floder) / (text_save_name + str(save_index).zfill(
-                        len(str(len(render_files)))) + output_theaters)
-                    save_index += 1
-                else:
-                    import_save = Path(self.path_out_floder) / (
-                        str(Path(import_img).name)[
-                            :-4] + SAVE_ADDITION + output_theaters)
-
-                impt.save_tmpfile(tmp, import_save)
-                self.log(f"已导出第{i+1}个文件 {import_save}")
+            if not template_tmp:
+                self.log(f"文件 {import_img}\n未找到对应模板", "ERROR")
+                log_warns += 1
                 continue
 
-            if search_img_mode:
+            palette = self._get_palette(output_theaters)
+            save_path = self._build_save_path(
+                import_img, save_index, total, output_theaters
+            )
 
-                if Path(import_img[:-4] + output_theaters).is_file():
+            ok = self._process_one(
+                import_img, template_tmp, palette, save_path
+            )
 
-                    pal_name = "iso" + output_theaters[1:] + ".pal"
-                    pal_floder = Path(self.path_pal).parent
-                    pal_file = pal_floder / pal_name
-                    palette = PalFile(pal_file).palette
+            if ok:
+                self.log(f"已导出第{i}个文件 {save_path}")
+                save_index += 1
+            else:
+                log_warns += 1
 
-                    template_tmp = import_img[:-4] + output_theaters
-
-                    tmp = TmpFile(template_tmp)
-
-                    re_is_size, re_size_1, re_size_2 = impt.import_image_to_tmp(
-                        tmp, import_img, palette, background_index=0,
-                        auto_radar=self.var_auto_radar.get() == "enable",
-                        change_normal=self.var_impt_img.get() == "enable",
-                        change_extra=self.var_impt_ext.get() == "enable")
-
-                    if not re_is_size:
-                        self.log(
-                            f"文件 {import_img}\n与模板{template_tmp}\n大小不一致！\t文件大小：{re_size_1}\t模板大小：{re_size_2}", "ERROR")
-                        log_warns += 1
-                        continue
-
-                    # 保存名称
-                    if not text_save_name == "":
-                        import_save = Path(self.path_out_floder) / (text_save_name +
-                                                                    str(save_index).zfill(str(len(render_files))) + output_theaters)
-                        save_index += 1
-                    else:
-                        import_save = Path(self.path_out_floder) / (
-                            str(Path(import_img).name)[
-                                :-4] + SAVE_ADDITION + output_theaters)
-
-                    impt.save_tmpfile(tmp, import_save)
-                    self.log(f"已导出第{i+1}个文件 {import_save}")
-
-                else:
-                    self.log(
-                        f"文件 {import_img}\n未找到对应模板{import_img[:-4] + output_theaters}", "WARN")
-                    log_warns += 1
-                continue
-
-            if search_tem_mode:
-
-                if Path(str(tem_floder / img_file_name[:-4]) + output_theaters).is_file():
-
-                    pal_name = "iso" + output_theaters[1:] + ".pal"
-                    pal_floder = Path(self.path_pal).parent
-                    pal_file = pal_floder / pal_name
-                    palette = PalFile(pal_file).palette
-
-                    template_tmp = str(
-                        tem_floder / img_file_name[:-4]) + output_theaters
-
-                    tmp = TmpFile(template_tmp)
-
-                    re_is_size, re_size_1, re_size_2 = impt.import_image_to_tmp(
-                        tmp, import_img, palette, background_index=0,
-                        auto_radar=self.var_auto_radar.get() == "enable",
-                        change_normal=self.var_impt_img.get() == "enable",
-                        change_extra=self.var_impt_ext.get() == "enable")
-
-                    if not re_is_size:
-                        self.log(
-                            f"文件 {import_img}\n与模板{template_tmp}\n大小不一致！\t文件大小：{re_size_1}\t模板大小：{re_size_2}", "ERROR")
-                        log_warns += 1
-                        continue
-
-                    # 保存名称
-                    if not text_save_name == "":
-                        import_save = Path(self.path_out_floder) / (text_save_name + str(
-                            save_index).zfill(str(len(render_files))) + output_theaters)
-                        save_index += 1
-                    else:
-                        import_save = Path(self.path_out_floder) / \
-                            str(Path(import_img).name)[
-                                :-4] + SAVE_ADDITION + output_theaters
-
-                    impt.save_tmpfile(tmp, import_save)
-                    self.log(f"已导出第{i+1}个文件 {import_save}")
-
-                else:
-                    self.log(
-                        f"文件 {import_img}\n未找到对应模板{str(tem_floder / img_file_name[:-4]) + output_theaters}", "WARN")
-                    log_warns += 1
-
-        self.log(f"", "PASS")
+        self.log("", "PASS")
         if log_warns == 0:
-            self.log(f"已导出全部{i+1}文件\n\n", "SUCCESS")
+            self.log(f"已导出全部{total}文件\n\n", "SUCCESS")
         else:
             self.log(
-                f"已导出{i+1-log_warns}/{i+1}个文件，其中{log_warns}个文件发生错误\n\n", "WARN")
+                f"已导出{total - log_warns}/{total}个文件，其中{log_warns}个文件发生错误\n\n",
+                "WARN"
+            )

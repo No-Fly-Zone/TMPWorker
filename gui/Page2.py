@@ -20,6 +20,12 @@ class Tab_Two(FilesTab):
 
         self.lb_show_type = "IMAGE"
 
+        self.ent_pal_output.place_forget()
+        self.btn_pal_output.place_forget()
+        
+        ToolTip(self.ckb_auto_pal,
+                "根据设置的导出文件后缀在选中色盘的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
+
         # 按钮区
 
         ttk.Button(self.btn_frame, text="添加",
@@ -202,7 +208,7 @@ class Tab_Two(FilesTab):
         return True
 
     def btn_run(self):
-        self.path_pal = self.ent_pal.get()
+        self.path_pal = self.ent_pal_input.get()
         self.path_out_floder = self.ent_out_floder.get()
         self.path_template = self.ent_template.get()
 

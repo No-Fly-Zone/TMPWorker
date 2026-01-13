@@ -23,7 +23,9 @@ class Tab_One(FilesTab):
 
         self.ent_template.place_forget()
         self.btn_template.place_forget()
-
+        self.ent_pal_output.place_forget()
+        self.btn_pal_output.place_forget()
+        
         # ----- 选项设置
 
         # 按钮区
@@ -163,8 +165,8 @@ class Tab_One(FilesTab):
     # --------- 导出图像 ---------
 
     def btn_run(self):
-        self.path_pal = self.ent_pal.get()
-        self.path_pal = self.ent_pal.get()
+        self.path_pal = self.ent_pal_input.get()
+        self.path_pal = self.ent_pal_input.get()
         self.path_out_floder = self.ent_out_floder.get()
 
         prefix = self.ent_prefix.get().split("\n")[0]

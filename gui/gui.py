@@ -95,6 +95,7 @@ class FilesTab(ttk.Frame):
         self.lst_files = []
         self.path_out_floder = ""
         self.path_pal = ""
+        self.path_pal_change = ""
         self.path_template = ""
 
         self.current_image = None  # 保存 PhotoImage 引用
@@ -150,13 +151,24 @@ class FilesTab(ttk.Frame):
         ).place(x=420, y=0, width=80, height=25)
 
         # 2) 色盘选择
-        self.ent_pal = tk.Entry(
+        self.ent_pal_input = tk.Entry(
             self.path_frame, relief="flat", insertwidth=1)
-        self.ent_pal.place(x=0, y=30, width=400, height=25)
+        self.ent_pal_input.place(x=0, y=30, width=400, height=25)
 
-        ttk.Button(
-            self.path_frame, text="选择pal", command=self.btn_choose_pal
-        ).place(x=420, y=30, width=80, height=25)
+        self.btn_pal_input = ttk.Button(
+            self.path_frame, text="选择色盘", command=self.btn_choose_pal_input
+        )
+        self.btn_pal_input.place(x=420, y=30, width=80, height=25)
+
+        # 气候转换双色盘
+        self.ent_pal_output = tk.Entry(
+            self.path_frame, relief="flat", insertwidth=1)
+        self.ent_pal_output.place(x=0, y=60, width=400, height=25)
+
+        self.btn_pal_output = ttk.Button(
+            self.path_frame, text="选择色盘", command=self.btn_choose_pal_output
+        )
+        self.btn_pal_output.place(x=420, y=60, width=80, height=25)
 
         # 3) 模板选择
         self.ent_template = tk.Entry(
@@ -250,20 +262,38 @@ class FilesTab(ttk.Frame):
         self.ent_out_floder.insert(tk.END, str(floder))
         self.save_config()
 
-    def btn_choose_pal(self):
+    def btn_choose_pal_input(self):
 
         while True:
             pal = filedialog.askopenfilename(
                 title="选择 pal 文件",    filetypes=[("PAL files", "*.pal")])
             if not pal:
                 self.path_pal = ""
-                self.ent_pal.delete(0, tk.END)
+                self.ent_pal_input.delete(0, tk.END)
                 self.save_config()
                 return
             if pal.endswith(".pal"):
                 self.path_pal = pal
-                self.ent_pal.delete(0, tk.END)
-                self.ent_pal.insert(0, pal)
+                self.ent_pal_input.delete(0, tk.END)
+                self.ent_pal_input.insert(0, pal)
+                self.save_config()
+                return
+            messagebox.showwarning("Warning", "Not a pal")
+
+    def btn_choose_pal_output(self):
+
+        while True:
+            pal = filedialog.askopenfilename(
+                title="选择 pal 文件",    filetypes=[("PAL files", "*.pal")])
+            if not pal:
+                self.path_pal_change = ""
+                self.ent_pal_output.delete(0, tk.END)
+                self.save_config()
+                return
+            if pal.endswith(".pal"):
+                self.path_pal_change = pal
+                self.ent_pal_output.delete(0, tk.END)
+                self.ent_pal_output.insert(0, pal)
                 self.save_config()
                 return
             messagebox.showwarning("Warning", "Not a pal")
@@ -314,7 +344,7 @@ class FilesTab(ttk.Frame):
             return
         
         if self.lb_show_type == "TMP":
-            self.path_pal = self.ent_pal.get()
+            self.path_pal = self.ent_pal_input.get()
 
             if not Path(self.path_pal).is_file():
                 return
@@ -348,7 +378,7 @@ class FilesTab(ttk.Frame):
             pal_name = "iso" + file[-3:] + ".pal"
 
             print(pal_name)
-            self.path_pal = self.ent_pal.get()
+            self.path_pal = self.ent_pal_input.get()
             pal_floder = Path(self.path_pal).parent
             pal_file = pal_floder / pal_name
             
@@ -471,7 +501,7 @@ class FilesTab(ttk.Frame):
         if Path(CONFIG_PATH).is_file():
             config.read(CONFIG_PATH, encoding="utf-8")
 
-            self.path_pal = str(Path(self.ent_pal.get()))
+            self.path_pal = str(Path(self.ent_pal_input.get()))
             self.path_out_floder = str(Path(self.ent_out_floder.get()))
             self.path_template = str(Path(self.ent_template.get()))
 
@@ -571,8 +601,8 @@ class FilesTab(ttk.Frame):
         # 2) 刷新色盘列表
         self.path_pal = self.isfile(config.get(
             SECTION_PATH, PAL_NAME, fallback=""))
-        self.ent_pal.delete(0, tk.END)
-        self.ent_pal.insert(0, self.path_pal)
+        self.ent_pal_input.delete(0, tk.END)
+        self.ent_pal_input.insert(0, self.path_pal)
 
         # 2) 刷新色盘列表
         self.path_template = self.isfile(config.get(
