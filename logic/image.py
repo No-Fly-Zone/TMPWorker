@@ -123,7 +123,8 @@ def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, backgroun
 
     if auto_radar:
         radar = get_radar_color(radar_count)
-    return bytes(target), radar
+        return bytes(target), radar
+    return bytes(target), None
 
 # --- 从区域图像生成 ExtraData（row-major） ---
 
@@ -173,7 +174,7 @@ def image_region_to_extradata(tile, region_img: Image, extra_w, extra_h, palette
     return bytes(target)
 
 
-def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, background_index=0, change_normal=True, change_extra=True, auto_radar=False, is_bridge=False):
+def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, background_index=0, change_normal=True, change_extra=True, auto_radar=False, is_bridge=False,img = None):
     """
     把 image_path 打开并裁切、映射到 tmp 的每个 Tile / Extra 部分：
       - 对 TileData：把 image 中对应 tile 区域裁切后按 diamond 顺序映回 TileData；
@@ -181,7 +182,8 @@ def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, background_index=0, 
       - 对 ExtraData：仅在非背景色像素处覆盖 ExtraData（rect）
     返回：修改后的 tmp（原地修改 tile.TileData 和 tile.ExtraData）
     """
-    img = Image.open(image_path).convert("RGBA")
+    if not img:
+        img = Image.open(image_path).convert("RGBA")
     # 画布边界以及 tmp 的渲染 canvas（用于坐标对齐）
     X, Y, R, B = tmp.compute_canvas_bounds()
     canvas_w = R - X

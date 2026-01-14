@@ -54,6 +54,7 @@ CONFIG_PATH = Path(CONFIG_DIR) / CONFIG_FILE
 
 # ---------------- 标签页类 ----------------
 
+
 class App(tk.Tk):
 
     def __init__(self):

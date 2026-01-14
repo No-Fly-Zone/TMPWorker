@@ -38,6 +38,22 @@ CONFIG_DIR = Path(APP_DIR) / "config"
 CONFIG_FILE = "files_config.ini"
 CONFIG_PATH = Path(CONFIG_DIR) / CONFIG_FILE
 
+SECTION_FILE = "Files"
+TMPPATH_NAME = "TmpPath"
+CONVERTPATH_NAME = "TmpConvertPath"
+IMAGEPATH_NAME = "ImagePath"
+
+SECTION_PATH = "Paths"
+PAL_NAME = "Palette"
+PAL_NAME2 = "PaletteNew"
+FLODER_NAME = "FileFloder"
+TEMPLATE_NAME = "Template"
+
+SECTION_SETTING = "Settings"
+AUTOPAL_NAME = "AutoPal"
+AUTOPAL2_NAME = "AutoPal2"
+THEATER_NAME = "Theater"
+
 # ---------------- 全局变量 ----------------
 # lst_files = []
 # lst_state = []
@@ -123,7 +139,7 @@ class FilesTab(ttk.Frame):
     # --------- UI ---------
 
     def _init_ui(self):
-        self.lb_show_type = 0
+        self.lb_show_type = "PAGE_0"
         # ----- 文件列表
         list_frame = ttk.Frame(self)
         list_frame.place(x=10, y=10, width=250, height=370)
@@ -190,8 +206,12 @@ class FilesTab(ttk.Frame):
             self.ckb_frame, text="自动色盘", variable=self.var_auto_pal, onvalue="enable", offvalue="disable")
 
         self.ckb_auto_pal.place(x=0, y=0, width=80, height=25)
-        ToolTip(self.ckb_auto_pal,
-                "根据 tmp 文件后缀在选中色盘的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
+
+        self.var_auto_pal_change = tk.StringVar(value="enable")
+        self.ckb_auto_pal_change = ttk.Checkbutton(
+            self.ckb_frame, text="导出地形", variable=self.var_auto_pal_change, onvalue="enable", offvalue="disable")
+
+        self.ckb_auto_pal_change.place(x=0, y=50, width=80, height=25)
 
         # 2) Label 前缀
         self.lb_prefix = ttk.Label(self.ckb_frame, text="限定前缀：")
@@ -209,7 +229,8 @@ class FilesTab(ttk.Frame):
         self.ent_suffix = tk.Entry(
             self.ckb_frame, relief="flat", insertwidth=1)
         self.ent_suffix.place(x=230, y=30, width=104, height=20)
-        ToolTip(self.ent_suffix, "只转换带有该后缀的文件，包含文件后缀名\n符合该后缀的文件将跳过气候检查")
+        ToolTip(self.ent_suffix, "只转换带有该后缀的文件，包含文件后缀名")
+        # \n符合该后缀的文件将跳过气候检查
 
         # 4) Label 导出名称
         self.lb_save_name = ttk.Label(self.ckb_frame, text="导出名称：")
@@ -233,21 +254,40 @@ class FilesTab(ttk.Frame):
 
     # --------- 行为逻辑 ---------
 
-    def get_palette(self, file_name=None):
-        if self.var_auto_pal.get() == "enable":
-            pal_name = "iso" + file_name[-3:] + ".pal"
-            print(pal_name)
-            pal_floder = Path(self.path_pal).parent
-            pal_file = pal_floder / pal_name
+    def get_output_text_name(self):
+        text_save_name = self.ent_save_name.get().split("\n")[0]
 
-            if Path(pal_file).is_file():
-                palette = PalFile(pal_file).palette
-            else:
-                self.log(f"未找到色盘{pal_file}\n使用选中色盘","WARN")
-                palette = PalFile(self.path_pal).palette
-        else:
-            palette = PalFile(self.path_pal).palette
-        return palette
+        if text_save_name:
+            at_count = text_save_name.count("@")
+
+            if at_count == 1:
+                text, start_index = text_save_name.split("@")
+                if text == "" or start_index == "":
+                    self.log(
+                        "导出名称中 [文本] 或 [起始序号] 为空，使用原名称\n导出名称格式应为 [文本@起始序号] 或 [文本]", "WARN")
+                else:
+                    return text, self.safe_call(int, start_index)
+                return text_save_name, 1
+
+            if at_count != 0:
+                self.log(
+                    "导出名称存在多个@，使用原名称\n导出名称格式应为 [文本@起始序号] 或 [文本]，只能包含 0 或 1 个 @", "WARN")
+            return text_save_name, 1
+        return "", 1
+
+    def get_palette(self, file=None):
+
+        if self.var_auto_pal.get() != "enable":
+            return PalFile(self.path_pal).palette
+
+        pal_name = f"iso{file[-3:]}.pal"
+        pal_file = Path(self.path_pal).parent / pal_name
+
+        if pal_file.is_file():
+            return PalFile(pal_file).palette
+
+        self.log(f"未找到色盘{pal_file}\n使用选中色盘", "WARN")
+        return PalFile(self.path_pal).palette
 
     def btn_choose_folder(self):
         floder = filedialog.askdirectory(title="选择导出文件夹")
@@ -342,8 +382,8 @@ class FilesTab(ttk.Frame):
     def file_on_select(self, event):
         if not self.lb_files.curselection():
             return
-        
-        if self.lb_show_type == "TMP":
+
+        if self.lb_show_type == "PAGE_1" or self.lb_show_type == "PAGE_3":
             self.path_pal = self.ent_pal_input.get()
 
             if not Path(self.path_pal).is_file():
@@ -354,7 +394,7 @@ class FilesTab(ttk.Frame):
             render_img, palette = self.render_preview(file)
             self.show_preview(render_img, palette)
 
-        elif self.lb_show_type == "IMAGE":
+        elif self.lb_show_type == "PAGE_2":
             index = self.lb_files.curselection()[0]
             file = self.full_paths[index]
 
@@ -366,14 +406,13 @@ class FilesTab(ttk.Frame):
     def render_preview(self, file):
         export_img = file[:-4] + ".png"
 
-
         tmp = TmpFile(file)
 
         if hasattr(self, 'var_zdata_mode') and self.var_zdata_mode is not None:
             if self.var_zdata_mode.get() == "enable":
                 render_img = render.render_full_ZData(tmp, export_img)
                 return render_img, None
-            
+
         if self.var_auto_pal.get() == "enable":
             pal_name = "iso" + file[-3:] + ".pal"
 
@@ -381,11 +420,11 @@ class FilesTab(ttk.Frame):
             self.path_pal = self.ent_pal_input.get()
             pal_floder = Path(self.path_pal).parent
             pal_file = pal_floder / pal_name
-            
+
             if Path(pal_file).is_file():
                 palette = PalFile(pal_file).palette
             else:
-                self.log(f"未找到色盘{pal_file}\n使用选中色盘","WARN")
+                self.log(f"未找到色盘{pal_file}\n使用选中色盘", "WARN")
                 palette = PalFile(self.path_pal).palette
         else:
             palette = PalFile(self.path_pal).palette
@@ -393,7 +432,7 @@ class FilesTab(ttk.Frame):
         render_img = render.render_full_png(
             tmp, palette, export_img,
             render_extra=True, out_bmp=False, out_png=False)
-            
+
         return render_img, palette
 
     def show_preview(self, render_img, palette=None):
@@ -481,18 +520,6 @@ class FilesTab(ttk.Frame):
     # --------- 配置读写 ---------
 
     def save_config(self):
-        SECTION_FILE = "Files"
-        TMPPATH_NAME = "TmpPath"
-        IMAGEPATH_NAME = "ImagePath"
-
-        SECTION_PATH = "Paths"
-        PAL_NAME = "Palette"
-        FLODER_NAME = "FileFloder"
-        TEMPLATE_NAME = "Template"
-
-        SECTION_SETTING = "Settings"
-        AUTOPAL_NAME = "AutoPal"
-        THEATER_NAME = "Theater"
 
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         config = configparser.ConfigParser()
@@ -502,28 +529,36 @@ class FilesTab(ttk.Frame):
             config.read(CONFIG_PATH, encoding="utf-8")
 
             self.path_pal = str(Path(self.ent_pal_input.get()))
+            self.path_pal_change = str(Path(self.ent_pal_output.get()))
             self.path_out_floder = str(Path(self.ent_out_floder.get()))
             self.path_template = str(Path(self.ent_template.get()))
 
         if not config.has_section(SECTION_FILE):
             config.add_section(SECTION_FILE)
 
-        if self.lb_show_type == "TMP":
-            config.set(SECTION_FILE, TMPPATH_NAME, "\n".join(self.full_paths))
+        if self.lb_show_type == "PAGE_1":
+            config.set(SECTION_FILE, TMPPATH_NAME,
+                       "\n".join(self.full_paths))
 
-        if self.lb_show_type == "IMAGE":
+        if self.lb_show_type == "PAGE_2":
             config.set(SECTION_FILE, IMAGEPATH_NAME,
+                       "\n".join(self.full_paths))
+
+        if self.lb_show_type == "PAGE_3":
+            config.set(SECTION_FILE, CONVERTPATH_NAME,
                        "\n".join(self.full_paths))
 
         config[SECTION_PATH] = {
             PAL_NAME: self.path_pal,
+            PAL_NAME2: self.path_pal_change,
             FLODER_NAME: self.path_out_floder,
             TEMPLATE_NAME: self.path_template
         }
 
         config[SECTION_SETTING] = {
             THEATER_NAME: ",".join(self.theaters),
-            AUTOPAL_NAME: self.var_auto_pal.get()
+            AUTOPAL_NAME: self.var_auto_pal.get(),
+            AUTOPAL2_NAME: self.var_auto_pal_change.get()
         }
 
         with open(CONFIG_PATH, "w", encoding="utf-8") as f:
@@ -537,18 +572,6 @@ class FilesTab(ttk.Frame):
     def load_config(self):
 
         # 读取 config
-        SECTION_FILE = "Files"
-        TMPPATH_NAME = "TmpPath"
-        IMAGEPATH_NAME = "ImagePath"
-
-        SECTION_PATH = "Paths"
-        PAL_NAME = "Palette"
-        FLODER_NAME = "FileFloder"
-        TEMPLATE_NAME = "Template"
-
-        SECTION_SETTING = "Settings"
-        AUTOPAL_NAME = "AutoPal"
-        THEATER_NAME = "Theater"
 
         if not Path(CONFIG_PATH).exists():
             self.save_config()
@@ -573,11 +596,20 @@ class FilesTab(ttk.Frame):
         else:
             self.var_auto_pal.set("enable")
 
+        auto_pal2 = config.get(SECTION_SETTING, AUTOPAL2_NAME,
+                               fallback=True)
+        if auto_pal2 in {"enable", "disable"}:
+            self.var_auto_pal_change.set(auto_pal2)
+        else:
+            self.var_auto_pal_change.set("enable")
+
         # 刷新文件列表
-        if self.lb_show_type == "TMP":
+        if self.lb_show_type == "PAGE_1":
             PATH_NAME = TMPPATH_NAME
-        if self.lb_show_type == "IMAGE":
+        if self.lb_show_type == "PAGE_2":
             PATH_NAME = IMAGEPATH_NAME
+        if self.lb_show_type == "PAGE_3":
+            PATH_NAME = CONVERTPATH_NAME
 
         raw = config.get(SECTION_FILE, PATH_NAME, fallback="")
         self.lst_files = [i for i in raw.splitlines(
@@ -603,6 +635,11 @@ class FilesTab(ttk.Frame):
             SECTION_PATH, PAL_NAME, fallback=""))
         self.ent_pal_input.delete(0, tk.END)
         self.ent_pal_input.insert(0, self.path_pal)
+
+        self.path_pal_change = self.isfile(config.get(
+            SECTION_PATH, PAL_NAME2, fallback=""))
+        self.ent_pal_output.delete(0, tk.END)
+        self.ent_pal_output.insert(0, self.path_pal_change)
 
         # 2) 刷新色盘列表
         self.path_template = self.isfile(config.get(

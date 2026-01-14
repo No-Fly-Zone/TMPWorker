@@ -18,14 +18,24 @@ class Tab_Three(FilesTab):
     def _init_ui(self):
         super()._init_ui()
 
-        self.lb_show_type = "TMP"
+        self.lb_show_type = "PAGE_3"
 
         self.ent_template.place_forget()
         self.btn_template.place_forget()
 
-        self.btn_pal_input.config(text="色盘")
-        self.btn_pal_output.config(text="色盘")
+        self.btn_pal_input.config(text="原色盘")
+        self.btn_pal_output.config(text="新色盘")
 
+        ttk.Label(self.ckb_frame, text="自动色盘：").place(
+            x=0, y=0, width=80, height=25)
+
+        self.ckb_auto_pal.config(text="原地形")
+        self.ckb_auto_pal.place(x=0, y=25, width=80, height=25)
+
+        ToolTip(self.ckb_auto_pal,
+                "根据 原 TMP 文件后缀 在 [原色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
+        ToolTip(self.ckb_auto_pal_change,
+                "根据 需要导出的文件后缀 在 [新色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
         # 按钮区
 
         ttk.Button(self.btn_frame, text="添加",
@@ -49,45 +59,11 @@ class Tab_Three(FilesTab):
         self.lb_suffix.place(x=120)
         self.ent_suffix.place(x=178)
 
-        self.var_auto_radar = tk.StringVar(value="enable")
-        self.var_impt_img = tk.StringVar(value="enable")
-        self.var_impt_ext = tk.StringVar(value="enable")
-
-        self.ckb_auto_radar = ttk.Checkbutton(
-            self.ckb_frame, text="自动雷达色", variable=self.var_auto_radar, onvalue="enable", offvalue="disable")
-        self.ckb_auto_radar.place(x=0, y=25, width=100, height=25)
-        ToolTip(self.ckb_auto_radar, "自动修改雷达色")
-
-        self.ckb_impt_img = ttk.Checkbutton(
-            self.ckb_frame, text="导入图像", variable=self.var_impt_img, onvalue="enable", offvalue="disable")
-        self.ckb_impt_img.place(x=0, y=50, width=100, height=25)
-        ToolTip(self.ckb_impt_img, "导入 Normal 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
-
-        self.ckb_impt_ext = ttk.Checkbutton(
-            self.ckb_frame, text="导入额外图像", variable=self.var_impt_ext, onvalue="enable", offvalue="disable")
-        self.ckb_impt_ext.place(x=0, y=75, width=100, height=25)
-        ToolTip(self.ckb_impt_ext, "导入 Extra 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
-
-        # 指定模板
-        self.var_specify_template = tk.StringVar()
-        self.cb_specify_template = ttk.Combobox(
-            self.ckb_frame,
-            textvariable=self.var_specify_template,
-            values=("使用选中模板", "图像文件名匹配", "模板文件夹匹配"),
-            state="readonly")
-        ToolTip(self.cb_specify_template,
-                "使用选中模板：按当前预览模板导出全部文件\n"
-                "图像文件名匹配：在图像所在文件夹中选择图像同名文件\n"
-                "模板文件夹匹配：在当前选中模板所在文件夹中选择图像同名文件\n"
-                "匹配时默认使用自动色盘转换对应气候")
         ttk.Label(self.ckb_frame, text="导出模式：").place(
             x=320, y=0, width=60, height=20)
-        self.cb_specify_template.place(x=320, y=25, width=115, height=24)
-        self.cb_specify_template.current(0)
 
         self.var_output_theater = tk.StringVar()
-        self.output_theaters_values = ["按选中模板气候"]
-        self.output_theaters_values += ["转换为"+i[1:] for i in self.theaters]
+        self.output_theaters_values = ["转换为"+i[1:] for i in self.theaters]
 
         self.cb_output_theater = ttk.Combobox(
             self.ckb_frame,
@@ -96,40 +72,19 @@ class Tab_Three(FilesTab):
             state="readonly")
         ToolTip(self.cb_output_theater,
                 "导出文件的气候类型")
-        self.cb_output_theater.place(x=320, y=60, width=115, height=24)
+        self.cb_output_theater.place(x=320, y=30, width=115, height=24)
         self.cb_output_theater.current(0)
 
         # 模板
         self.path_frame.place(height=85)
 
-        ToolTip(self.ent_save_name,
-                "导出文件命名为[此处输入文本][01起始的序号].[气候名]\n对于导出地形，超过99后需要后续处理")
+        ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
+                                    "导出文件将会命名为 [文本][起始序号].[气候名]")
     # --------- 行为逻辑 ---------
-
-    def btn_choose_pal_new(self):
-
-        while True:
-            pal = filedialog.askopenfilename(
-                title="选择 pal 文件",    filetypes=[("PAL files", "*.pal")])
-            if not pal:
-                self.path_pal = ""
-                self.ent_pal_input.delete(0, tk.END)
-                self.save_config()
-                return
-            if pal.endswith(".pal"):
-                self.path_pal = pal
-                self.ent_pal_input.delete(0, tk.END)
-                self.ent_pal_input.insert(0, pal)
-                self.save_config()
-                return
-            messagebox.showwarning("Warning", "Not a pal")
 
     def btn_add_files(self):
         files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
-            ("Image files", "*.png *.bmp"),
-            ("PNG", "*.png"),
-            ("BMP", "*.bmp")
-        ])
+            ("TMP files", self.tmp_suffix)])
         for f in files:
             if f not in self.full_paths:
                 self.full_paths.append(f)
@@ -138,14 +93,14 @@ class Tab_Three(FilesTab):
 
     # --------- 导出图像 ---------
 
-    def _get_palette(self, output_theaters):
+    def _get_palette(self, file):
         '''
         获取色盘
         '''
         if self.var_auto_pal.get() != "enable":
             return PalFile(self.path_pal).palette
 
-        pal_name = f"iso{output_theaters[1:]}.pal"
+        pal_name = f"iso{file[-3:]}.pal"
         pal_file = Path(self.path_pal).parent / pal_name
 
         if pal_file.is_file():
@@ -154,39 +109,29 @@ class Tab_Three(FilesTab):
         self.log(f"未找到色盘{pal_file}\n使用选中色盘", "WARN")
         return PalFile(self.path_pal).palette
 
-    def _find_template(self, mode, import_img, img_stem, output_theaters):
+    def _get_palette_2(self, output_theaters):
         '''
-        模板查找
-        
-        mode: 匹配模式
-        img_stem: 文件名
+        获取色盘
         '''
+        if self.var_auto_pal_change.get() != "enable":
+            return PalFile(self.path_pal_change).palette
 
-        if mode == "temp":
-            return self.path_template if Path(self.path_template).is_file() else ""
+        pal_name = f"iso{output_theaters[1:]}.pal"
+        pal_file = Path(self.path_pal_change).parent / pal_name
 
-        if mode == "img":
-            img_path = Path(import_img)
-            for t in (output_theaters, *self.theaters):
-                p = img_path.with_suffix(t)
-                if p.is_file():
-                    return str(p)
+        if pal_file.is_file():
+            return PalFile(pal_file).palette
 
-        if mode == "tem":
-            base = Path(self.path_template).parent / img_stem
-            for t in (output_theaters, *self.theaters):
-                p = base.with_suffix(t)
-                if p.is_file():
-                    return str(p)
-
-        return ""
+        self.log(f"未找到色盘{pal_file}\n使用选中色盘", "WARN")
+        return PalFile(self.path_pal_change).palette
 
     def _build_save_path(self, import_img, save_index, total, output_theaters):
-        text_save_name = self.ent_save_name.get().split("\n")[0]
+
+        text_save_name, start_index = self.get_output_text_name()
 
         if text_save_name:
             width = len(str(total))
-            name = f"{text_save_name}{str(save_index).zfill(width)}{output_theaters}"
+            name = f"{text_save_name}{str(save_index + start_index - 1).zfill(width)}{output_theaters}"
         else:
             name = f"{Path(import_img).stem}{output_theaters}"
 
@@ -204,13 +149,11 @@ class Tab_Three(FilesTab):
         tmp = TmpFile(template_tmp)
 
         ok, size1, size2 = impt.import_image_to_tmp(
-            tmp,
-            import_img,
-            palette,
+            tmp=tmp,
+            image_path=None,
+            pal=palette,
             background_index=0,
-            auto_radar=self.var_auto_radar.get() == "enable",
-            change_normal=self.var_impt_img.get() == "enable",
-            change_extra=self.var_impt_ext.get() == "enable"
+            img=import_img
         )
 
         if not ok:
@@ -226,16 +169,21 @@ class Tab_Three(FilesTab):
         return True
 
     def btn_run(self):
+
         self.path_pal = self.ent_pal_input.get()
+        self.path_pal_change = self.ent_pal_output.get()
         self.path_out_floder = self.ent_out_floder.get()
-        self.path_template = self.ent_template.get()
 
         if not Path(self.path_pal).is_file():
             messagebox.showwarning("警告", "未选择色盘")
             return
 
-        prefix = self.ent_prefix.get().split("\n")[0]
-        suffix = self.ent_suffix.get().split("\n")[0] or (".png", ".bmp")
+        if not Path(self.path_pal_change).is_file():
+            messagebox.showwarning("警告", "未选择色盘")
+            return
+
+        prefix = self.ent_prefix.get().split("\n")[0].strip()
+        suffix = self.ent_suffix.get().split("\n")[0].strip()
 
         render_files = [
             str(Path(p))
@@ -253,48 +201,35 @@ class Tab_Three(FilesTab):
         self.save_config()
         self.load_config()
 
-        mode_map = {
-            "使用选中模板": "temp",
-            "图像文件名匹配": "img",
-            "模板文件夹匹配": "tem",
-        }
-        mode = mode_map.get(self.var_specify_template.get())
-
-        if not mode:
-            messagebox.showwarning("警告", "未选择导出格式")
-            return
-
-        if self.var_output_theater.get() == "按选中模板气候":
-            output_theaters = self.path_template[-4:]
-        else:
-            output_theaters = "." + self.var_output_theater.get()[3:].lower()
+        output_theaters = "." + self.var_output_theater.get()[3:].lower()
 
         save_index = 1
         log_warns = 0
         total = len(render_files)
 
-        for i, import_img in enumerate(render_files, 1):
-            self.log(f"正在导出第{i}个文件 {import_img}")
+        for i, file in enumerate(render_files, 1):
+            self.log(f"正在导出第{i}个文件 {file}")
 
-            template_tmp = self._find_template(
-                mode,
-                import_img,
-                Path(import_img).stem,
-                output_theaters
-            )
+            tmp = TmpFile(file)
+            palette = self._get_palette(file)
 
-            if not template_tmp:
-                self.log(f"文件 {import_img}\n未找到对应模板", "ERROR")
+            re_image = self.safe_call(render.render_full_png,
+                                      tmp, palette, output_img="",
+                                      render_extra=True, out_bmp=False, out_png=False)
+            if re_image == None:
+                self.log(f"第{i+1}个文件 {file}导出失败", "WARN")
                 log_warns += 1
                 continue
+            self.show_preview(re_image)
 
-            palette = self._get_palette(output_theaters)
+            palette_2 = self._get_palette_2(output_theaters)
+
             save_path = self._build_save_path(
-                import_img, save_index, total, output_theaters
+                file, save_index, total, output_theaters
             )
 
             ok = self._process_one(
-                import_img, template_tmp, palette, save_path
+                re_image, file, palette_2, save_path
             )
 
             if ok:

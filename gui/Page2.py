@@ -18,13 +18,14 @@ class Tab_Two(FilesTab):
     def _init_ui(self):
         super()._init_ui()
 
-        self.lb_show_type = "IMAGE"
+        self.lb_show_type = "PAGE_2"
 
         self.ent_pal_output.place_forget()
         self.btn_pal_output.place_forget()
-        
+        self.ckb_auto_pal_change.place_forget()
+
         ToolTip(self.ckb_auto_pal,
-                "根据设置的导出文件后缀在选中色盘的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
+                "根据设置的导出文件后缀在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
 
         # 按钮区
 
@@ -76,10 +77,10 @@ class Tab_Two(FilesTab):
             values=("使用选中模板", "图像文件名匹配", "模板文件夹匹配"),
             state="readonly")
         ToolTip(self.cb_specify_template,
-                "使用选中模板：按当前预览模板导出全部文件\n"
-                "图像文件名匹配：在图像所在文件夹中选择图像同名文件\n"
-                "模板文件夹匹配：在当前选中模板所在文件夹中选择图像同名文件\n"
-                "匹配时默认使用自动色盘转换对应气候")
+                "使用选中模板：按 [当前选中模板] 导出全部文件\n"
+                "图像文件名匹配：在 [图像所在文件夹] 中选择图像同名文件\n"
+                "模板文件夹匹配：在 [当前选中模板所在文件夹] 中选择图像同名文件\n"
+                "匹配时默认使用 自动色盘 转换对应气候")
         ttk.Label(self.ckb_frame, text="导出模式：").place(
             x=320, y=0, width=60, height=20)
         self.cb_specify_template.place(x=320, y=25, width=115, height=24)
@@ -102,8 +103,8 @@ class Tab_Two(FilesTab):
         # 模板
         self.path_frame.place(height=85)
 
-        ToolTip(self.ent_save_name,
-                "导出文件命名为[此处输入文本][01起始的序号].[气候名]\n对于导出地形，超过99后需要后续处理")
+        ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
+                                    "导出文件将会命名为 [文本][起始序号].[气候名]")
     # --------- 行为逻辑 ---------
 
     def btn_add_files(self):
@@ -139,7 +140,7 @@ class Tab_Two(FilesTab):
     def _find_template(self, mode, import_img, img_stem, output_theaters):
         '''
         模板查找
-        
+
         mode: 匹配模式
         img_stem: 文件名
         '''
@@ -164,11 +165,12 @@ class Tab_Two(FilesTab):
         return ""
 
     def _build_save_path(self, import_img, save_index, total, output_theaters):
-        text_save_name = self.ent_save_name.get().split("\n")[0]
+
+        text_save_name, start_index = self.get_output_text_name()
 
         if text_save_name:
             width = len(str(total))
-            name = f"{text_save_name}{str(save_index).zfill(width)}{output_theaters}"
+            name = f"{text_save_name}{str(save_index + start_index - 1).zfill(width)}{output_theaters}"
         else:
             name = f"{Path(import_img).stem}{output_theaters}"
 
@@ -211,13 +213,14 @@ class Tab_Two(FilesTab):
         self.path_pal = self.ent_pal_input.get()
         self.path_out_floder = self.ent_out_floder.get()
         self.path_template = self.ent_template.get()
+        self.lst_files = self.full_paths.copy()
 
         if not Path(self.path_pal).is_file():
             messagebox.showwarning("警告", "未选择色盘")
             return
 
-        prefix = self.ent_prefix.get().split("\n")[0]
-        suffix = self.ent_suffix.get().split("\n")[0] or (".png", ".bmp")
+        prefix = self.ent_prefix.get().split("\n")[0].strip()
+        suffix = self.ent_suffix.get().split("\n")[0].strip()
 
         render_files = [
             str(Path(p))

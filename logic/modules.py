@@ -2,6 +2,7 @@
 import io
 import struct
 
+
 class PalFile:
     """
     色盘
@@ -30,7 +31,6 @@ class PalFile:
             b8 = b6 * 252 // 63
 
             self.palette.append((r8, g8, b8, 255))
-
 
 
 # class PalFile:
@@ -169,7 +169,7 @@ class TmpTile:
         self.has_extra = (self.DataBitfield & 0x01) != 0
         self.has_z = (self.DataBitfield & 0x02) != 0
         self.has_damaged = (self.DataBitfield & 0x04) != 0
-        
+
         # print(f'No_damaged: {int(self.has_damaged)} Zdata: {int(self.has_z)} Extra: {int(self.has_extra)}')
 
         if self.has_z:

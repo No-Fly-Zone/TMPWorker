@@ -18,14 +18,17 @@ class Tab_One(FilesTab):
     def _init_ui(self):
         super()._init_ui()
 
-        self.lb_show_type = "TMP"
+        self.lb_show_type = "PAGE_1"
         # ----- 文件夹选择
 
         self.ent_template.place_forget()
         self.btn_template.place_forget()
         self.ent_pal_output.place_forget()
         self.btn_pal_output.place_forget()
-        
+        self.ckb_auto_pal_change.place_forget()
+
+        ToolTip(self.ckb_auto_pal,
+                "根据 TMP 文件后缀 在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
         # ----- 选项设置
 
         # 按钮区
@@ -70,7 +73,8 @@ class Tab_One(FilesTab):
         ToolTip(self.ckb_zdata_mode,
                 "导出图像的 Zdata\n原始值 0-29对应图像 (0,0,0) 到 (232,232,232)")
 
-        ToolTip(self.ent_save_name, "导出文件命名为[此处输入文本][01起始的序号].[png/bmp]")
+        ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
+                                    "导出文件将会命名为 [文本][起始序号].[png/bmp]")
 
     # def file_on_select(self, event):
     #     if not self.lb_files.curselection():
@@ -169,8 +173,8 @@ class Tab_One(FilesTab):
         self.path_pal = self.ent_pal_input.get()
         self.path_out_floder = self.ent_out_floder.get()
 
-        prefix = self.ent_prefix.get().split("\n")[0]
-        suffix = self.ent_suffix.get().split("\n")[0]
+        prefix = self.ent_prefix.get().split("\n")[0].strip()
+        suffix = self.ent_suffix.get().split("\n")[0].strip()
 
         bmp = self.var_exp_bmp.get() == "enable"
         png = self.var_exp_png.get() == "enable"
@@ -223,24 +227,23 @@ class Tab_One(FilesTab):
             # print(palette)
             self.log(f"正在导出第{i+1}个文件 {file}")
 
-            text_save_name = self.ent_save_name.get().split("\n")[0]
+            # text_save_name = self.ent_save_name.get().split("\n")[0]
             print(self.path_out_floder)
-            
+            text_save_name, start_index = self.get_output_text_name()
             # 指定保存名称
             if not text_save_name == "":
-                output_img = str(self.path_out_floder + text_save_name + "/" +
-                                 str(save_index).zfill(len(str(len(render_files)))))
+                output_img = str(self.path_out_floder + "\\" + text_save_name +
+                                 str(save_index + start_index - 1).zfill(len(str(len(render_files)))))
                 save_index += 1
             else:
                 print(str(Path(file).name))
                 output_img = self.path_out_floder + \
-                    "/" + str(Path(file).name)[:-4]
+                    "\\" + str(Path(file).name)[:-4]
 
             tmp = TmpFile(file)
 
             if not Path(self.path_out_floder).exists():
                 Path(self.path_out_floder).mkdir(parents=True, exist_ok=True)
-
 
             if self.var_zdata_mode.get() == "disable":
                 re_image = self.safe_call(render.render_full_png,
