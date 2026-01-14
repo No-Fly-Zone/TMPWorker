@@ -20,11 +20,11 @@ class Tab_Two(FilesTab):
 
         self.lb_show_type = "PAGE_2"
 
-        self.ent_pal_output.place_forget()
-        self.btn_pal_output.place_forget()
-        self.ckb_auto_pal_change.place_forget()
+        self.ent_pal_target.place_forget()
+        self.btn_pal_target.place_forget()
+        self.ckb_auto_pal_target.place_forget()
 
-        ToolTip(self.ckb_auto_pal,
+        ToolTip(self.ckb_auto_pal_source,
                 "根据设置的导出文件后缀在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
 
         # 按钮区
@@ -121,22 +121,6 @@ class Tab_Two(FilesTab):
 
     # --------- 导出图像 ---------
 
-    def _get_palette(self, output_theaters):
-        '''
-        获取色盘
-        '''
-        if self.var_auto_pal.get() != "enable":
-            return PalFile(self.path_pal).palette
-
-        pal_name = f"iso{output_theaters[1:]}.pal"
-        pal_file = Path(self.path_pal).parent / pal_name
-
-        if pal_file.is_file():
-            return PalFile(pal_file).palette
-
-        self.log(f"未找到色盘{pal_file}\n使用选中色盘", "WARN")
-        return PalFile(self.path_pal).palette
-
     def _find_template(self, mode, import_img, img_stem, output_theaters):
         '''
         模板查找
@@ -208,14 +192,17 @@ class Tab_Two(FilesTab):
         self._ensure_template_copy(template_tmp, save_path)
         impt.save_tmpfile(tmp, save_path)
         return True
-
+    
     def btn_run(self):
-        self.path_pal = self.ent_pal_input.get()
+        self.safe_call(self.btn_run_safe)
+
+    def btn_run_safe(self):
+        self.path_pal_source = self.ent_pal_source.get()
         self.path_out_floder = self.ent_out_floder.get()
         self.path_template = self.ent_template.get()
         self.lst_files = self.full_paths.copy()
 
-        if not Path(self.path_pal).is_file():
+        if not Path(self.path_pal_source).is_file():
             messagebox.showwarning("警告", "未选择色盘")
             return
 
@@ -250,9 +237,9 @@ class Tab_Two(FilesTab):
             return
 
         if self.var_output_theater.get() == "按选中模板气候":
-            output_theaters = self.path_template[-4:]
+            save_theater = self.path_template[-4:]
         else:
-            output_theaters = "." + self.var_output_theater.get()[3:].lower()
+            save_theater = "." + self.var_output_theater.get()[3:].lower()
 
         save_index = 1
         log_warns = 0
@@ -265,7 +252,7 @@ class Tab_Two(FilesTab):
                 mode,
                 import_img,
                 Path(import_img).stem,
-                output_theaters
+                save_theater
             )
 
             if not template_tmp:
@@ -273,9 +260,9 @@ class Tab_Two(FilesTab):
                 log_warns += 1
                 continue
 
-            palette = self._get_palette(output_theaters)
+            palette = self.get_source_pal(save_theater)
             save_path = self._build_save_path(
-                import_img, save_index, total, output_theaters
+                import_img, save_index, total, save_theater
             )
 
             ok = self._process_one(

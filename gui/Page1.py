@@ -23,11 +23,11 @@ class Tab_One(FilesTab):
 
         self.ent_template.place_forget()
         self.btn_template.place_forget()
-        self.ent_pal_output.place_forget()
-        self.btn_pal_output.place_forget()
-        self.ckb_auto_pal_change.place_forget()
+        self.ent_pal_target.place_forget()
+        self.btn_pal_target.place_forget()
+        self.ckb_auto_pal_target.place_forget()
 
-        ToolTip(self.ckb_auto_pal,
+        ToolTip(self.ckb_auto_pal_source,
                 "根据 TMP 文件后缀 在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
         # ----- 选项设置
 
@@ -76,103 +76,16 @@ class Tab_One(FilesTab):
         ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
                                     "导出文件将会命名为 [文本][起始序号].[png/bmp]")
 
-    # def file_on_select(self, event):
-    #     if not self.lb_files.curselection():
-    #         return
-
-    #     self.path_pal = self.ent_pal.get()
-
-    #     if not Path(self.path_pal).is_file():
-    #         return
-    #     index = self.lb_files.curselection()[0]
-    #     file = self.full_paths[index]
-
-    #     render_img, palette = self.render_preview(file)
-    #     self.show_preview(render_img, palette)
-
-    # # 图片预览
-    # def render_preview(self, file):
-    #     export_img = file[:-4] + ".png"
-
-    #     if self.var_auto_pal.get() == "enable":
-    #         pal_name = "iso" + file[-3:] + ".pal"
-
-    #         print(pal_name)
-    #         self.path_pal = self.ent_pal.get()
-    #         pal_floder = Path(self.path_pal).parent
-    #         pal_file = pal_floder / pal_name
-
-    #         palette = PalFile(pal_file).palette
-    #     else:
-    #         palette = PalFile(self.path_pal).palette
-    #     tmp = TmpFile(file)
-
-    #     if self.var_zdata_mode.get() == "disable":
-    #         render_img = render.render_full_png(
-    #             tmp, palette, export_img,
-    #             render_extra=True, out_bmp=False, out_png=False)
-    #     else:
-    #         render_img = render.render_full_ZData(tmp, export_img)
-    #     return render_img, palette
-
-    # def show_preview(self, render_img, palette=None):
-
-    #     # 填充边框颜色
-    #     border_color1 = (255, 255, 255, 255) if render_img.mode == "RGBA" else (
-    #         255, 255, 255)
-    #     border_color2 = (225, 225, 225, 255) if render_img.mode == "RGBA" else (
-    #         225, 225, 225)
-
-    #     p_width = self.image_label_width - 8
-    #     p_height = self.image_label_height - 8
-
-    #     if not palette == None:
-    #         render_img = render_img.copy()
-    #         pixels = render_img.load()
-
-    #         old_color = palette[0]
-    #         new_color = border_color1
-
-    #         for x in range(render_img.width):
-    #             for y in range(render_img.height):
-    #                 if pixels[x, y] == old_color:
-    #                     pixels[x, y] = new_color
-
-    #     # 根据预览大小缩放
-    #     max_w = self.image_label_width - 4
-    #     max_h = self.image_label_height - 4
-
-    #     width, height = render_img.size
-    #     if width > max_w:
-    #         render_img = render_img.resize(
-    #             (max_w, max(int(height * max_w / width), 1)), Image.LANCZOS)
-
-    #     width, height = render_img.size
-    #     if height > max_h:
-    #         render_img = render_img.resize(
-    #             (max(int(width * max_h / height), 1), max_h), Image.LANCZOS)
-
-    #     temp_img = Image.new(
-    #         render_img.mode, (p_width + 2, p_height + 2), border_color1)
-
-    #     w1, h1 = temp_img.size
-    #     w2, h2 = render_img.size
-    #     temp_img.paste(render_img, (int(0.5*(w1-w2)), int(0.5*(h1-h2))))
-
-    #     preview_img = Image.new(
-    #         render_img.mode, (p_width + 4, p_height + 4), border_color2)
-    #     preview_img.paste(temp_img, (1, 1))
-
-    #     self.current_image = ImageTk.PhotoImage(preview_img)
-    #     self.image_label.config(image=self.current_image)
-
     # --------- 导出图像 ---------
 
     def btn_run(self):
-        self.path_pal = self.ent_pal_input.get()
-        self.path_pal = self.ent_pal_input.get()
-        self.path_out_floder = self.ent_out_floder.get()
+        self.safe_call(self.btn_run_safe)
 
+    def btn_run_safe(self):
+        self.path_pal_source = self.ent_pal_source.get()
+        self.path_pal_source = self.ent_pal_source.get()
+        self.path_out_floder = self.ent_out_floder.get()
+        
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
 
@@ -181,7 +94,7 @@ class Tab_One(FilesTab):
         if not (bmp or png):
             messagebox.showwarning("警告", "未选择导出格式")
             return
-        if not Path(self.path_pal).is_file():
+        if not Path(self.path_pal_source).is_file():
             messagebox.showwarning("警告", "未选择色盘")
             return
 
@@ -195,19 +108,7 @@ class Tab_One(FilesTab):
             Path(p).name.endswith(suffix)
         ]
 
-        # # 批处理文件夹
-        # if not suffix:
-        #     suffix = tuple(self.theaters.copy())
-        # if not self.path_out_floder == "" and Path(self.path_out_floder).is_dir():
-        #     floder_files = [
-        #         str(p)
-        #         for p in Path(self.path_out_floder).iterdir()
-        #         if p.is_file() and
-        #         (str(p) not in render_files) and
-        #         p.name.startswith(prefix) and
-        #         p.name.endswith(suffix)
-        #     ]
-        #     render_files += floder_files
+
         if not render_files:
             messagebox.showwarning("警告", "未选择需要导出的 TMP 文件")
             return
@@ -223,7 +124,7 @@ class Tab_One(FilesTab):
             if self.path_out_floder == "":
                 self.path_out_floder = str(Path(file).parent)
             # 色盘
-            palette = self.get_palette(file_name=file)
+            palette = self.get_source_pal(file)
             # print(palette)
             self.log(f"正在导出第{i+1}个文件 {file}")
 
@@ -246,11 +147,11 @@ class Tab_One(FilesTab):
                 Path(self.path_out_floder).mkdir(parents=True, exist_ok=True)
 
             if self.var_zdata_mode.get() == "disable":
-                re_image = self.safe_call(render.render_full_png,
+                re_image = render.render_full_png(
                                           tmp, palette, output_img,
                                           render_extra=True, out_bmp=bmp, out_png=png)
             else:
-                re_image = self.safe_call(render.render_full_ZData,
+                re_image = render.render_full_ZData(
                                           tmp, output_img, out_bmp=bmp, out_png=png)
                 output_img += "_z"
 

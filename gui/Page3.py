@@ -23,18 +23,18 @@ class Tab_Three(FilesTab):
         self.ent_template.place_forget()
         self.btn_template.place_forget()
 
-        self.btn_pal_input.config(text="原色盘")
-        self.btn_pal_output.config(text="新色盘")
+        self.btn_pal_source.config(text="原色盘")
+        self.btn_pal_target.config(text="新色盘")
 
         ttk.Label(self.ckb_frame, text="自动色盘：").place(
             x=0, y=0, width=80, height=25)
 
-        self.ckb_auto_pal.config(text="原地形")
-        self.ckb_auto_pal.place(x=0, y=25, width=80, height=25)
+        self.ckb_auto_pal_source.config(text="原地形")
+        self.ckb_auto_pal_source.place(x=0, y=25, width=80, height=25)
 
-        ToolTip(self.ckb_auto_pal,
+        ToolTip(self.ckb_auto_pal_source,
                 "根据 原 TMP 文件后缀 在 [原色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
-        ToolTip(self.ckb_auto_pal_change,
+        ToolTip(self.ckb_auto_pal_target,
                 "根据 需要导出的文件后缀 在 [新色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
         # 按钮区
 
@@ -93,38 +93,6 @@ class Tab_Three(FilesTab):
 
     # --------- 导出图像 ---------
 
-    def _get_palette(self, file):
-        '''
-        获取色盘
-        '''
-        if self.var_auto_pal.get() != "enable":
-            return PalFile(self.path_pal).palette
-
-        pal_name = f"iso{file[-3:]}.pal"
-        pal_file = Path(self.path_pal).parent / pal_name
-
-        if pal_file.is_file():
-            return PalFile(pal_file).palette
-
-        self.log(f"未找到色盘{pal_file}\n使用选中色盘", "WARN")
-        return PalFile(self.path_pal).palette
-
-    def _get_palette_2(self, output_theaters):
-        '''
-        获取色盘
-        '''
-        if self.var_auto_pal_change.get() != "enable":
-            return PalFile(self.path_pal_change).palette
-
-        pal_name = f"iso{output_theaters[1:]}.pal"
-        pal_file = Path(self.path_pal_change).parent / pal_name
-
-        if pal_file.is_file():
-            return PalFile(pal_file).palette
-
-        self.log(f"未找到色盘{pal_file}\n使用选中色盘", "WARN")
-        return PalFile(self.path_pal_change).palette
-
     def _build_save_path(self, import_img, save_index, total, output_theaters):
 
         text_save_name, start_index = self.get_output_text_name()
@@ -169,16 +137,18 @@ class Tab_Three(FilesTab):
         return True
 
     def btn_run(self):
+        self.safe_call(self.btn_run_safe)
 
-        self.path_pal = self.ent_pal_input.get()
-        self.path_pal_change = self.ent_pal_output.get()
+    def btn_run_safe(self):
+        self.path_pal_source = self.ent_pal_source.get()
+        self.path_pal_target = self.ent_pal_target.get()
         self.path_out_floder = self.ent_out_floder.get()
 
-        if not Path(self.path_pal).is_file():
+        if not Path(self.path_pal_source).is_file():
             messagebox.showwarning("警告", "未选择色盘")
             return
 
-        if not Path(self.path_pal_change).is_file():
+        if not Path(self.path_pal_target).is_file():
             messagebox.showwarning("警告", "未选择色盘")
             return
 
@@ -211,18 +181,18 @@ class Tab_Three(FilesTab):
             self.log(f"正在导出第{i}个文件 {file}")
 
             tmp = TmpFile(file)
-            palette = self._get_palette(file)
+            palette = self.get_source_pal(file)
 
-            re_image = self.safe_call(render.render_full_png,
-                                      tmp, palette, output_img="",
-                                      render_extra=True, out_bmp=False, out_png=False)
+            re_image = render.render_full_png(
+                tmp, palette, output_img="",
+                render_extra=True, out_bmp=False, out_png=False)
             if re_image == None:
                 self.log(f"第{i+1}个文件 {file}导出失败", "WARN")
                 log_warns += 1
                 continue
-            self.show_preview(re_image)
+            # self.show_preview(re_image)
 
-            palette_2 = self._get_palette_2(output_theaters)
+            palette_2 = self.get_target_pal(output_theaters)
 
             save_path = self._build_save_path(
                 file, save_index, total, output_theaters
