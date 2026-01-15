@@ -77,7 +77,27 @@ class Tab_One(FilesTab):
                                     "导出文件将会命名为 [文本][起始序号].[png/bmp]")
 
     # --------- 导出图像 ---------
+    def is_valid_pil_image(self, img: Image.Image):
 
+        if img is None:
+            return False
+
+        if not isinstance(img, Image.Image):
+            return False
+
+        w, h = img.size
+        if w <= 0 or h <= 0:
+            return False
+
+        if img.getbbox() is None:
+            return False
+        
+        # WWSB=yes
+        # 斜坡13号地形是空的
+        
+        WWSB=True
+        return WWSB
+    
     def btn_run(self):
         self.safe_call(self.btn_run_safe)
 
@@ -129,7 +149,7 @@ class Tab_One(FilesTab):
             self.log(f"正在导出第{i+1}个文件 {file}")
 
             # text_save_name = self.ent_save_name.get().split("\n")[0]
-            print(self.path_out_floder)
+            # print(self.path_out_floder)
             text_save_name, start_index = self.get_output_text_name()
             # 指定保存名称
             if not text_save_name == "":
@@ -137,7 +157,7 @@ class Tab_One(FilesTab):
                                  str(save_index + start_index - 1).zfill(len(str(len(render_files)))))
                 save_index += 1
             else:
-                print(str(Path(file).name))
+                # print(str(Path(file).name))
                 output_img = self.path_out_floder + \
                     "\\" + str(Path(file).name)[:-4]
 
@@ -155,7 +175,7 @@ class Tab_One(FilesTab):
                                           tmp, output_img, out_bmp=bmp, out_png=png)
                 output_img += "_z"
 
-            if re_image == None:
+            if not self.is_valid_pil_image(re_image):
                 self.log(f"第{i+1}个文件 {file}导出失败", "WARN")
                 log_warns += 1
             else:

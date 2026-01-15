@@ -87,13 +87,13 @@ class Tab_Two(FilesTab):
         self.cb_specify_template.current(0)
 
         self.var_output_theater = tk.StringVar()
-        self.output_theaters_values = ["按选中模板气候"]
-        self.output_theaters_values += ["转换为"+i[1:] for i in self.theaters]
+        self.output_theater_values = ["按选中模板气候"]
+        self.output_theater_values += ["转换为"+i[1:] for i in self.theaters]
 
         self.cb_output_theater = ttk.Combobox(
             self.ckb_frame,
             textvariable=self.var_output_theater,
-            values=self.output_theaters_values,
+            values=self.output_theater_values,
             state="readonly")
         ToolTip(self.cb_output_theater,
                 "导出文件的气候类型")
@@ -121,7 +121,7 @@ class Tab_Two(FilesTab):
 
     # --------- 导出图像 ---------
 
-    def _find_template(self, mode, import_img, img_stem, output_theaters):
+    def _find_template(self, mode, import_img, img_stem, output_theater):
         '''
         模板查找
 
@@ -134,29 +134,29 @@ class Tab_Two(FilesTab):
 
         if mode == "img":
             img_path = Path(import_img)
-            for t in (output_theaters, *self.theaters):
+            for t in (output_theater, *self.theaters):
                 p = img_path.with_suffix(t)
                 if p.is_file():
                     return str(p)
 
         if mode == "tem":
             base = Path(self.path_template).parent / img_stem
-            for t in (output_theaters, *self.theaters):
+            for t in (output_theater, *self.theaters):
                 p = base.with_suffix(t)
                 if p.is_file():
                     return str(p)
 
         return ""
 
-    def _build_save_path(self, import_img, save_index, total, output_theaters):
+    def _build_save_path(self, import_img, save_index, total, output_theater):
 
         text_save_name, start_index = self.get_output_text_name()
 
         if text_save_name:
             width = len(str(total))
-            name = f"{text_save_name}{str(save_index + start_index - 1).zfill(width)}{output_theaters}"
+            name = f"{text_save_name}{str(save_index + start_index - 1).zfill(width)}{output_theater}"
         else:
-            name = f"{Path(import_img).stem}{output_theaters}"
+            name = f"{Path(import_img).stem}{output_theater}"
 
         return Path(self.path_out_floder) / name
 

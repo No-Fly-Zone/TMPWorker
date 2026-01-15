@@ -1,7 +1,16 @@
-
+from pathlib import Path
 from PIL import Image
 import numpy as np
 from logic.modules import TmpTile, TmpFile
+# 52 (224, 216, 204)
+# 94 (192, 172, 160)
+# 98 (164, 148, 116)
+# 154 (36, 36, 44)
+# 157 (100, 140, 44)
+# 169 (88, 100, 28)
+# 244 (168, 172, 144)
+# 247 (36, 48, 8)
+# RE_INDEX = [52, 94, 98, 154, 157, 169, 244, 247]
 
 
 def map_z_byte(b):
@@ -14,6 +23,7 @@ def tile_image(tile: TmpTile, bw, bh, palette, background_index=0):
     """
     渲染单个 tile 的 Normal 部分图像 (TileData) 
     """
+    # find = False
     img = Image.new("RGBA", (bw, bh), (0, 0, 0, 0))
     px = img.load()
 
@@ -30,6 +40,9 @@ def tile_image(tile: TmpTile, bw, bh, palette, background_index=0):
             if ptr >= len(tile.TileData):
                 break
             cindex = tile.TileData[ptr]
+            # if cindex in RE_INDEX:
+            #     # print(cindex)
+            #     find = True
             ptr += 1
             if cindex != background_index:
                 r, g, b, a = palette[cindex]
@@ -42,12 +55,15 @@ def tile_image(tile: TmpTile, bw, bh, palette, background_index=0):
             if ptr >= len(tile.TileData):
                 break
             cindex = tile.TileData[ptr]
+            # if cindex in RE_INDEX:
+            #     # print(cindex)
+            #     find = True
             ptr += 1
             if cindex != background_index:
                 r, g, b, a = palette[cindex]
                 px[x + i, y] = (r, g, b, a)
 
-    return img
+    return img  # , find
 
 
 def extra_image(tile: TmpTile, palette, background_index=0):
@@ -57,7 +73,7 @@ def extra_image(tile: TmpTile, palette, background_index=0):
     """
     if tile.ExtraData is None or tile.ExtraWidth == 0 or tile.ExtraHeight == 0:
         return None, 0, 0
-
+    # find = False
     w = abs(tile.ExtraWidth)
     h = abs(tile.ExtraHeight)
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -68,11 +84,14 @@ def extra_image(tile: TmpTile, palette, background_index=0):
             if ptr >= len(tile.ExtraData):
                 break
             idx = tile.ExtraData[ptr]
+            # if idx in RE_INDEX:
+            #     # print(idx)
+            #     find = True
             ptr += 1
             if idx != background_index:
                 r, g, b, a = palette[idx]
                 px[x, y] = (r, g, b, a)
-    return img, w, h
+    return img, w, h  # , find
 
 
 def render_full_png(tmp: TmpFile, palette, output_img, render_extra=True, out_png=True, out_bmp=False):
@@ -95,13 +114,20 @@ def render_full_png(tmp: TmpFile, palette, output_img, render_extra=True, out_pn
         # tile image
         tile_img = tile_image(tile, tmp.BlockWidth,
                               tmp.BlockHeight, palette, background_index)
+        # if find:
+        #     # print(f"发现重复地形，在{Path(output_img+'.png').stem}的normal")
+        #     pass
         ox = tile.X - X
         oy = tile.Y - tile.Height * half - Y
         canvas.alpha_composite(tile_img, (ox, oy))
 
         # ExtraData: rectangular overlay at ExtraX, ExtraY adjusted for height
         if render_extra and tile.has_extra and tile.ExtraData is not None:
-            extra_img, ew, eh = extra_image(tile, palette, background_index)
+            extra_img, ew, eh = extra_image(
+                tile, palette, background_index)
+            # if find:
+            #     # print(f"发现重复地形，在{Path(output_img+'.png').stem}的extra")
+            #     pass
             if extra_img:
                 ex = tile.ExtraX - X
                 ey = tile.ExtraY - tile.Height * half - Y
@@ -113,6 +139,10 @@ def render_full_png(tmp: TmpFile, palette, output_img, render_extra=True, out_pn
     r, g, b, a = palette[background_index]
     arr[mask] = [r, g, b, a]
     save_canvas = Image.fromarray(arr, mode="RGBA")
+
+    h, w = arr.shape[:2]
+    if h == 0 or w == 0:
+        return save_canvas
 
     if out_png:
         save_canvas.save(output_img+'.png')
@@ -225,6 +255,10 @@ def render_full_ZData(tmp: TmpFile, out_z_png, out_png=False, out_bmp=False):
     r, g, b, a = [255, 0, 0, 255]
     arr[mask] = [r, g, b, a]
     save_canvas = Image.fromarray(arr, mode="RGBA")
+
+    h, w = arr.shape[:2]
+    if h == 0 or w == 0:
+        return save_canvas
 
     if out_png:
         save_canvas.save(out_z_png+'_z.png')

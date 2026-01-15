@@ -63,12 +63,12 @@ class Tab_Three(FilesTab):
             x=320, y=0, width=60, height=20)
 
         self.var_output_theater = tk.StringVar()
-        self.output_theaters_values = ["转换为"+i[1:] for i in self.theaters]
+        self.output_theater_values = ["转换为"+i[1:] for i in self.theaters]
 
         self.cb_output_theater = ttk.Combobox(
             self.ckb_frame,
             textvariable=self.var_output_theater,
-            values=self.output_theaters_values,
+            values=self.output_theater_values,
             state="readonly")
         ToolTip(self.cb_output_theater,
                 "导出文件的气候类型")
@@ -93,15 +93,15 @@ class Tab_Three(FilesTab):
 
     # --------- 导出图像 ---------
 
-    def _build_save_path(self, import_img, save_index, total, output_theaters):
+    def _build_save_path(self, import_img, save_index, total, output_theater):
 
         text_save_name, start_index = self.get_output_text_name()
 
         if text_save_name:
             width = len(str(total))
-            name = f"{text_save_name}{str(save_index + start_index - 1).zfill(width)}{output_theaters}"
+            name = f"{text_save_name}{str(save_index + start_index - 1).zfill(width)}{output_theater}"
         else:
-            name = f"{Path(import_img).stem}{output_theaters}"
+            name = f"{Path(import_img).stem}{output_theater}"
 
         return Path(self.path_out_floder) / name
 
@@ -171,7 +171,7 @@ class Tab_Three(FilesTab):
         self.save_config()
         self.load_config()
 
-        output_theaters = "." + self.var_output_theater.get()[3:].lower()
+        output_theater = "." + self.var_output_theater.get()[3:].lower()
 
         save_index = 1
         log_warns = 0
@@ -181,10 +181,10 @@ class Tab_Three(FilesTab):
             self.log(f"正在导出第{i}个文件 {file}")
 
             tmp = TmpFile(file)
-            palette = self.get_source_pal(file)
+            pal_source = self.get_source_pal(file)
 
             re_image = render.render_full_png(
-                tmp, palette, output_img="",
+                tmp, pal_source, output_img="",
                 render_extra=True, out_bmp=False, out_png=False)
             if re_image == None:
                 self.log(f"第{i+1}个文件 {file}导出失败", "WARN")
@@ -192,14 +192,14 @@ class Tab_Three(FilesTab):
                 continue
             # self.show_preview(re_image)
 
-            palette_2 = self.get_target_pal(output_theaters)
+            pal_target = self.get_target_pal(output_theater)
 
             save_path = self._build_save_path(
-                file, save_index, total, output_theaters
+                file, save_index, total, output_theater
             )
 
             ok = self._process_one(
-                re_image, file, palette_2, save_path
+                re_image, file, pal_target, save_path
             )
 
             if ok:
