@@ -179,6 +179,8 @@ class Tab_One(FilesTab):
                 self.log(f"第{i+1}个文件 {file}导出失败", "WARN")
                 log_warns += 1
             else:
+                self.show_preview(re_image)
+
                 if bmp:
                     self.log(f"已导出第{i+1}个文件 {str(Path(output_img + ".bmp"))}")
                 if png:

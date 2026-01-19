@@ -15,7 +15,8 @@ def tile_image(tile: TmpTile, bw, bh, palette, background_index=0):
     渲染单个 tile 的 Normal 部分图像 (TileData) 
     """
     # find = False
-    img = Image.new("RGBA", (bw, bh), (0, 0, 0, 0))
+    br, bg, bb, _ = palette[0]
+    img = Image.new("RGBA", (bw, bh), (br, bg, bb, 255))
     px = img.load()
 
     ptr = 0
@@ -169,7 +170,7 @@ def tile_Zdata(tile: TmpTile, bw, bh):
                 break
             zb = tile.ZData[ptr]
             ptr += 1
-            if zb == 0 or zb == 205:
+            if zb == 0:
                 continue
             px[x + i, y] = map_z_byte(zb)
 

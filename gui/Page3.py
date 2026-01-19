@@ -120,9 +120,10 @@ class Tab_Three(FilesTab):
             tmp=tmp,
             image_path=None,
             pal=palette,
-            background_index=0,
             img=import_img
         )
+
+        self.show_preview(import_img)
 
         if not ok:
             self.log(
@@ -190,7 +191,6 @@ class Tab_Three(FilesTab):
                 self.log(f"第{i+1}个文件 {file}导出失败", "WARN")
                 log_warns += 1
                 continue
-            # self.show_preview(re_image)
 
             pal_target = self.get_target_pal(output_theater)
 

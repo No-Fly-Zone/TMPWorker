@@ -20,25 +20,17 @@ def get_radar_color(radar_count):
 # --- 从区域图像生成 TileData  ---
 
 
-def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, background_index=0, bg_rgb=None,  auto_radar=False):
+def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, auto_radar=False):
     """
     region_img 写入 tile 的 Normal 部分，同时判断雷达色与桥头
-
-    only_write_nonbg:
-        True  - 只有当区域像素 != 背景颜色才覆盖原来的 TileData（推荐）
-        False - 无论如何都写入（若像素映射到 background_index 则写 background_index）
     """
     # 原有 TileData 转为可变 bytearray
     original = bytearray(tile.TileData)
-    target = original[:]  # start from original, overwrite选定位置
+    target = original[:]
 
     rgb_to_index, rgb_list = cl.build_palette_index_map(palette)
 
     radar_count = {'r': 0, 'g': 0, 'b': 0, 'count': 0}
-
-    if bg_rgb is None:
-        br, bg, bb, _ = palette[background_index]
-        bg_rgb = (br, bg, bb)
 
     px = region_img.load()  # (x,y) -> (r,g,b,a)
 
@@ -68,13 +60,6 @@ def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, backgroun
                 continue
             r, g, b, a = p
 
-            # is_nonbg = (a != 0) and ((r, g, b) != bg_rgb)
-            # if not is_nonbg:
-            #     ptr += 1
-            #     continue
-            # if target[ptr] == 0:    # 忽视0号色
-            #     ptr += 1
-            #     continue
             radar_count['r'] += r
             radar_count['g'] += g
             radar_count['b'] += b
@@ -102,14 +87,6 @@ def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, backgroun
                 continue
             r, g, b, a = p
 
-            # is_nonbg = (a != 0) and ((r, g, b) != bg_rgb)
-            # if only_write_nonbg and not is_nonbg:
-            #     ptr += 1
-            #     continue
-            # if target[ptr] == 0:    # 忽视0号色
-            #     ptr += 1
-            #     continue
-
             radar_count['r'] += r
             radar_count['g'] += g
             radar_count['b'] += b
@@ -129,7 +106,7 @@ def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, backgroun
 # --- 从区域图像生成 ExtraData（row-major） ---
 
 
-def image_region_to_extradata(tile, region_img: Image, extra_w, extra_h, palette, background_index=0, bg_rgb=None):
+def image_region_to_extradata(tile, region_img: Image, extra_w, extra_h, palette):
     """
     region_img 写入 tile 的 Extra 部分
 
@@ -145,12 +122,8 @@ def image_region_to_extradata(tile, region_img: Image, extra_w, extra_h, palette
     target = original[:]
 
     rgb_to_index, rgb_list = cl.build_palette_index_map(palette)
-    if bg_rgb is None:
-        br, bgc, bb, _ = palette[background_index]
-        bg_rgb = (br, bgc, bb)
 
     px = region_img.load()
-
     ptr = 0
     for y in range(abs(extra_h)):
         for x in range(abs(extra_w)):
@@ -161,11 +134,7 @@ def image_region_to_extradata(tile, region_img: Image, extra_w, extra_h, palette
                 ptr += 1
                 continue
             r, g, b, a = px[x, y]
-            # is_nonbg = (a != 0) and ((r, g, b) != bg_rgb)
-            # # print(bg_rgb,r,g,b)
-            # if not is_nonbg:
-            #     ptr += 1
-            #     continue
+
             idx = rgb_to_index.get((r, g, b))
             if idx is None:
                 idx = cl.find_nearest_color_index((r, g, b), rgb_list)
@@ -174,11 +143,10 @@ def image_region_to_extradata(tile, region_img: Image, extra_w, extra_h, palette
     return bytes(target)
 
 
-def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, background_index=0, change_normal=True, change_extra=True, auto_radar=False, is_bridge=False,img = None):
+def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, change_normal=True, change_extra=True, auto_radar=False, is_bridge=False, img=None):
     """
     把 image_path 打开并裁切、映射到 tmp 的每个 Tile / Extra 部分：
       - 对 TileData：把 image 中对应 tile 区域裁切后按 diamond 顺序映回 TileData；
-        覆盖条件：像素 alpha>0 且颜色 != palette[background_index]
       - 对 ExtraData：仅在非背景色像素处覆盖 ExtraData（rect）
     返回：修改后的 tmp（原地修改 tile.TileData 和 tile.ExtraData）
     """
@@ -190,17 +158,6 @@ def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, background_index=0, 
     canvas_h = B - Y
     if img.size != (canvas_w, canvas_h):
         return False, img.size, (canvas_w, canvas_h)
-        raise ValueError(
-            f"输入图像大小 {img.size} 与 TMP 渲染画布大小 {(canvas_w, canvas_h)} 不匹配。请传入相同尺寸的 BMP/PNG 或先调整其大小。")
-    # background RGB
-
-    br, bgc, bb, _ = pal[background_index]
-    # print(f'bg{br, bgc, bb}')
-    # if (br, bgc, bb) == (0, 0, 125):
-    #     br, bgc, bb = 3, 3, 126
-    #     # 问就是神秘Pallete studio干的
-
-    bg_rgb = (br, bgc, bb)
 
     # 对每个 tile，裁切对应区域并应用到 TileData / ExtraData
     half = tmp.BlockHeight // 2
@@ -222,7 +179,7 @@ def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, background_index=0, 
         region = img.crop((left, top, right, bottom))
         # 根据 region 生产新的 TileData，只有非背景像素覆盖
         new_tiledata, radar_data = image_region_to_tiledata(
-            tile, region, bw, bh, pal, background_index, bg_rgb, auto_radar=auto_radar)
+            tile, region, bw, bh, pal, auto_radar=auto_radar)
         if change_normal:
             tile.TileData = new_tiledata
 
@@ -251,7 +208,7 @@ def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, background_index=0, 
             extra_box = (ex, ey, ex + ew, ey + eh)
             extra_region = img.crop(extra_box)
             new_extradata = image_region_to_extradata(
-                tile, extra_region, ew, eh, pal, background_index, bg_rgb)
+                tile, extra_region, ew, eh, pal)
             tile.ExtraData = new_extradata
 
     # print("Imported image into TMP tiles (in-memory). 修改已写入 tmp.tiles。")

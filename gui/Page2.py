@@ -175,11 +175,12 @@ class Tab_Two(FilesTab):
             tmp,
             import_img,
             palette,
-            background_index=0,
             auto_radar=self.var_auto_radar.get() == "enable",
             change_normal=self.var_impt_img.get() == "enable",
             change_extra=self.var_impt_ext.get() == "enable"
         )
+        
+        self.show_preview(Image.open(import_img))
 
         if not ok:
             self.log(
