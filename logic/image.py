@@ -20,7 +20,7 @@ def get_radar_color(radar_count):
 # --- 从区域图像生成 TileData  ---
 
 
-def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, background_index=0, bg_rgb=None, only_write_nonbg=True, auto_radar=False):
+def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, background_index=0, bg_rgb=None,  auto_radar=False):
     """
     region_img 写入 tile 的 Normal 部分，同时判断雷达色与桥头
 
@@ -68,13 +68,13 @@ def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, backgroun
                 continue
             r, g, b, a = p
 
-            is_nonbg = (a != 0) and ((r, g, b) != bg_rgb)
-            if only_write_nonbg and not is_nonbg:
-                ptr += 1
-                continue
-            if target[ptr] == 0:    # 忽视0号色
-                ptr += 1
-                continue
+            # is_nonbg = (a != 0) and ((r, g, b) != bg_rgb)
+            # if not is_nonbg:
+            #     ptr += 1
+            #     continue
+            # if target[ptr] == 0:    # 忽视0号色
+            #     ptr += 1
+            #     continue
             radar_count['r'] += r
             radar_count['g'] += g
             radar_count['b'] += b
@@ -102,13 +102,13 @@ def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, backgroun
                 continue
             r, g, b, a = p
 
-            is_nonbg = (a != 0) and ((r, g, b) != bg_rgb)
-            if only_write_nonbg and not is_nonbg:
-                ptr += 1
-                continue
-            if target[ptr] == 0:    # 忽视0号色
-                ptr += 1
-                continue
+            # is_nonbg = (a != 0) and ((r, g, b) != bg_rgb)
+            # if only_write_nonbg and not is_nonbg:
+            #     ptr += 1
+            #     continue
+            # if target[ptr] == 0:    # 忽视0号色
+            #     ptr += 1
+            #     continue
 
             radar_count['r'] += r
             radar_count['g'] += g
@@ -161,11 +161,11 @@ def image_region_to_extradata(tile, region_img: Image, extra_w, extra_h, palette
                 ptr += 1
                 continue
             r, g, b, a = px[x, y]
-            is_nonbg = (a != 0) and ((r, g, b) != bg_rgb)
-            # print(bg_rgb,r,g,b)
-            if not is_nonbg:
-                ptr += 1
-                continue
+            # is_nonbg = (a != 0) and ((r, g, b) != bg_rgb)
+            # # print(bg_rgb,r,g,b)
+            # if not is_nonbg:
+            #     ptr += 1
+            #     continue
             idx = rgb_to_index.get((r, g, b))
             if idx is None:
                 idx = cl.find_nearest_color_index((r, g, b), rgb_list)
@@ -222,7 +222,7 @@ def import_image_to_tmp(tmp: TmpFile, image_path: str, pal, background_index=0, 
         region = img.crop((left, top, right, bottom))
         # 根据 region 生产新的 TileData，只有非背景像素覆盖
         new_tiledata, radar_data = image_region_to_tiledata(
-            tile, region, bw, bh, pal, background_index, bg_rgb, only_write_nonbg=True, auto_radar=auto_radar)
+            tile, region, bw, bh, pal, background_index, bg_rgb, auto_radar=auto_radar)
         if change_normal:
             tile.TileData = new_tiledata
 

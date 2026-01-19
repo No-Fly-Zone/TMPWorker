@@ -440,7 +440,8 @@ class FilesTab(ttk.Frame):
         elif self.lb_show_type == "PAGE_2":
             index = self.lb_files.curselection()[0]
             file = self.full_paths[index]
-
+            
+            print(Image.open(file).mode)
             render_img = Image.open(file).convert(
                 "RGBA")  # self.render_preview(file)
             self.show_preview(render_img)

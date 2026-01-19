@@ -1,16 +1,7 @@
-from pathlib import Path
+
 from PIL import Image
 import numpy as np
 from logic.modules import TmpTile, TmpFile
-# 52 (224, 216, 204)
-# 94 (192, 172, 160)
-# 98 (164, 148, 116)
-# 154 (36, 36, 44)
-# 157 (100, 140, 44)
-# 169 (88, 100, 28)
-# 244 (168, 172, 144)
-# 247 (36, 48, 8)
-# RE_INDEX = [52, 94, 98, 154, 157, 169, 244, 247]
 
 
 def map_z_byte(b):
