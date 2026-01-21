@@ -16,7 +16,7 @@ def tile_image(tile: TmpTile, bw, bh, palette, background_index=0):
     """
     # find = False
     br, bg, bb, _ = palette[0]
-    img = Image.new("RGBA", (bw, bh), (br, bg, bb, 255))
+    img = Image.new("RGBA", (bw, bh), (br, bg, bb, 0))
     px = img.load()
 
     ptr = 0

@@ -42,6 +42,7 @@ SECTION_LIST = "Files"
 DIR_TMP = "TMP_Files"
 DIR_IMAGE = "Image_Files"
 DIR_TMP_CONVERT = "TMP_Convert_Files"
+DIR_ZDATA = "ZData_Files"
 
 SECTION_PATH = "Paths"
 DIR_PAL_SOURCE = "Source_Palette"
@@ -119,13 +120,162 @@ class FilesTab(ttk.Frame):
         self.only_start = ""
         self.only_end = ""
 
-        self.image_label_width = 408
-        self.image_label_height = 208
+        self.image_label_width = 608
+        self.image_label_height = 308
         self.theaters = [".tem", ".urb", ".sno", ".ubn", ".des", ".lun"]
         self._init_ui()
 
         self.load_config()
         self.tmp_suffix = "*"+" *".join(self.theaters)
+
+    # --------- UI ---------
+
+    def _init_ui(self):
+        self.lb_show_type = "PAGE_0"
+
+        # ----- 文件列表 -----
+
+        self.file_frame = ttk.Labelframe(self, text="文件列表")
+        self.file_frame.place(x=10, y=10, width=880, height=365)
+
+        self.lb_files = tk.Listbox(
+            self.file_frame, selectmode=tk.EXTENDED, relief="flat", takefocus=False)
+        # self.lb_files.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.lb_files.place(x=10, y=10, width=210, height=292)
+
+        sb = ttk.Scrollbar(self.file_frame, orient=tk.VERTICAL,
+                           command=self.lb_files.yview)
+        # sb.pack(side=tk.RIGHT, fill=tk.Y)
+        sb.place(x=220, y=10, height=292)
+        self.lb_files.config(yscrollcommand=sb.set)
+
+        # 按钮
+        ttk.Button(self.file_frame, text="添加",
+                   command=self.btn_add_files).place(x=10, y=310, width=62, height=25)
+        ttk.Button(self.file_frame, text="移除",
+                   command=self.btn_remove_selected).place(x=74, y=310, width=62, height=25)
+        ttk.Button(self.file_frame, text="清空全部",
+                   command=self.btn_remove_all).place(x=140, y=310, width=80, height=25)
+        
+        # 右侧预览区
+        self.image_label = ttk.Label(
+            self.file_frame, anchor="center", relief="flat")
+        self.image_label.place(
+            x=246, y=8, width=self.image_label_width, height=self.image_label_height)
+
+        self.lb_files.bind("<<ListboxSelect>>", self.file_on_select)
+        self.show_preview(Image.new("RGB", (10, 10), (255, 255, 255)))
+        
+        # ttk.Button(self.file_frame, text="导出",
+        #            command=self.btn_run).place(x=3, y=350, width=80, height=25)
+
+
+        # ----- 路径选择 -----
+
+        self.path_frame = ttk.Labelframe(self, text="路径设置")
+        self.path_frame.place(x=10, y=385, width=880, height=120)
+
+        # 1) 批处理路径选择
+        self.lb_out_floder = ttk.Label(self.path_frame, text="文件导出到目录：")
+        self.lb_out_floder.place(x=10, y=5, width=120, height=25)
+
+        self.ent_out_floder = tk.Entry(
+            self.path_frame, relief="sunken", insertwidth=1)
+        self.ent_out_floder.place(x=110, y=5, width=670, height=25)
+
+        ttk.Button(
+            self.path_frame, text="选择目录", command=self.btn_choose_folder
+        ).place(x=790, y=5, width=80, height=25)
+
+        # 2) 色盘选择
+        self.lb_pal_source = ttk.Label(self.path_frame, text="导入地形的色盘：")
+        self.lb_pal_source.place(x=10, y=35, width=120, height=25)
+
+        self.ent_pal_source = tk.Entry(
+            self.path_frame, relief="sunken", insertwidth=1)
+        self.ent_pal_source.place(x=110, y=35, width=670, height=25)
+
+        self.btn_pal_source = ttk.Button(
+            self.path_frame, text="选择色盘", command=self.btn_choose_pal_input
+        )
+        self.btn_pal_source.place(x=790, y=35, width=80, height=25)
+
+        # 气候转换双色盘
+        self.lb_pal_target = ttk.Label(self.path_frame, text="新地形的色盘：")
+        self.lb_pal_target.place(x=10, y=65, width=120, height=25)
+
+        self.ent_pal_target = tk.Entry(
+            self.path_frame, relief="sunken", insertwidth=1)
+        self.ent_pal_target.place(x=110, y=65, width=670, height=25)
+
+        self.btn_pal_target = ttk.Button(
+            self.path_frame, text="选择色盘", command=self.btn_choose_pal_output
+        )
+        self.btn_pal_target.place(x=790, y=65, width=80, height=25)
+
+        # 3) 模板选择
+        self.lb_template = ttk.Label(self.path_frame, text="选择地形模板：")
+        self.lb_template.place(x=10, y=65, width=120, height=25)
+
+        self.ent_template = tk.Entry(
+            self.path_frame, relief="sunken", insertwidth=1)
+        self.ent_template.place(x=110, y=65, width=670, height=25)
+
+        self.btn_template = ttk.Button(
+            self.path_frame, text="选择模板", command=self.btn_choose_template
+        )
+        self.btn_template.place(x=790, y=65, width=80, height=25)
+
+        # ----- 选项设置 -----
+
+        self.setting_frame = ttk.Labelframe(self, text="导出选项")
+        self.setting_frame.place(x=10, y=515, width=880, height=120)
+
+        # 1) Checkbox 自动色盘
+        self.var_auto_pal_source = tk.StringVar(value="enable")
+
+        self.ckb_auto_pal_source = ttk.Checkbutton(
+            self.setting_frame, text="自动选择色盘", variable=self.var_auto_pal_source, onvalue="enable", offvalue="disable")
+
+        self.ckb_auto_pal_source.place(x=10, y=20, width=110, height=25)
+
+        self.var_auto_pal_target = tk.StringVar(value="enable")
+        self.ckb_auto_pal_target = ttk.Checkbutton(
+            self.setting_frame, text="自动选择色盘 - 新地形", variable=self.var_auto_pal_target, onvalue="enable", offvalue="disable")
+
+        self.ckb_auto_pal_target.place(x=10, y=50, width=160, height=25)
+
+        # 2) Label 前缀
+        self.lb_prefix = ttk.Label(self.setting_frame, text="只转换前缀：")
+        self.lb_prefix.place(x=300, y=0, width=80, height=25)
+
+        self.ent_prefix = tk.Entry(
+            self.setting_frame, relief="flat", insertwidth=1)
+        self.ent_prefix.place(x=375, y=2, width=104, height=20)
+        ToolTip(self.ent_prefix, "只转换带有该前缀的文件")
+
+        # 3) Label 后缀
+        self.lb_suffix = ttk.Label(self.setting_frame, text="只转换后缀：")
+        self.lb_suffix.place(x=300, y=28, width=80, height=25)
+
+        self.ent_suffix = tk.Entry(
+            self.setting_frame, relief="flat", insertwidth=1)
+        self.ent_suffix.place(x=375, y=30, width=104, height=20)
+        ToolTip(self.ent_suffix, "只转换带有该后缀的文件，包含文件后缀名")
+        # \n符合该后缀的文件将跳过气候检查
+
+        # 4) Label 导出名称
+        self.lb_save_name = ttk.Label(self.setting_frame, text="导出文件名：")
+        self.lb_save_name.place(x=300, y=58, width=80, height=25)
+
+        self.ent_save_name = tk.Entry(
+            self.setting_frame, relief="flat", insertwidth=1)
+        self.ent_save_name.place(x=375, y=60, width=104, height=20)
+
+        self.btn_runbtn = ttk.Button(self.setting_frame, text="开始导出",command=self.btn_run)
+        self.btn_runbtn.place(x=700, y=45, width=120, height=30)
+
+    # --------- 行为逻辑 ---------
 
     def log(self, msg, level="INFO"):
         self.log_callback(msg, level)
@@ -136,123 +286,6 @@ class FilesTab(ttk.Frame):
         except Exception:
             self.log(traceback.format_exc(), "ERROR")
             return None
-    # --------- UI ---------
-
-    def _init_ui(self):
-        self.lb_show_type = "PAGE_0"
-        # ----- 文件列表
-        list_frame = ttk.Frame(self)
-        list_frame.place(x=10, y=10, width=250, height=370)
-
-        self.lb_files = tk.Listbox(
-            list_frame, selectmode=tk.EXTENDED, relief="flat", takefocus=False)
-        self.lb_files.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        sb = ttk.Scrollbar(list_frame, orient=tk.VERTICAL,
-                           command=self.lb_files.yview)
-        sb.pack(side=tk.RIGHT, fill=tk.Y)
-        self.lb_files.config(yscrollcommand=sb.set)
-
-        # ----- 文件夹选择
-        self.path_frame = ttk.Frame(self)
-        self.path_frame.place(x=260, y=10, width=500, height=80)
-
-        # 1) 批处理路径选择
-        self.ent_out_floder = tk.Entry(
-            self.path_frame, relief="flat", insertwidth=1)
-        self.ent_out_floder.place(x=0, y=0, width=400, height=25)
-
-        ttk.Button(
-            self.path_frame, text="导出目录", command=self.btn_choose_folder
-        ).place(x=420, y=0, width=80, height=25)
-
-        # 2) 色盘选择
-        self.ent_pal_source = tk.Entry(
-            self.path_frame, relief="flat", insertwidth=1)
-        self.ent_pal_source.place(x=0, y=30, width=400, height=25)
-
-        self.btn_pal_source = ttk.Button(
-            self.path_frame, text="选择色盘", command=self.btn_choose_pal_input
-        )
-        self.btn_pal_source.place(x=420, y=30, width=80, height=25)
-
-        # 气候转换双色盘
-        self.ent_pal_target = tk.Entry(
-            self.path_frame, relief="flat", insertwidth=1)
-        self.ent_pal_target.place(x=0, y=60, width=400, height=25)
-
-        self.btn_pal_target = ttk.Button(
-            self.path_frame, text="选择色盘", command=self.btn_choose_pal_output
-        )
-        self.btn_pal_target.place(x=420, y=60, width=80, height=25)
-
-        # 3) 模板选择
-        self.ent_template = tk.Entry(
-            self.path_frame, relief="flat", insertwidth=1)
-        self.ent_template.place(x=0, y=60, width=400, height=25)
-
-        self.btn_template = ttk.Button(
-            self.path_frame, text="选择模板", command=self.btn_choose_template
-        )
-        self.btn_template.place(x=420, y=60, width=80, height=25)
-
-        # ----- 选项设置
-        self.ckb_frame = ttk.Frame(self)
-
-        # 1) Checkbox 自动色盘
-        self.var_auto_pal_source = tk.StringVar(value="enable")
-
-        self.ckb_auto_pal_source = ttk.Checkbutton(
-            self.ckb_frame, text="自动色盘", variable=self.var_auto_pal_source, onvalue="enable", offvalue="disable")
-
-        self.ckb_auto_pal_source.place(x=0, y=0, width=80, height=25)
-
-        self.var_auto_pal_target = tk.StringVar(value="enable")
-        self.ckb_auto_pal_target = ttk.Checkbutton(
-            self.ckb_frame, text="导出地形", variable=self.var_auto_pal_target, onvalue="enable", offvalue="disable")
-
-        self.ckb_auto_pal_target.place(x=0, y=50, width=80, height=25)
-
-        # 2) Label 前缀
-        self.lb_prefix = ttk.Label(self.ckb_frame, text="限定前缀：")
-        self.lb_prefix.place(x=170, y=0, width=80, height=25)
-
-        self.ent_prefix = tk.Entry(
-            self.ckb_frame, relief="flat", insertwidth=1)
-        self.ent_prefix.place(x=230, y=2, width=104, height=20)
-        ToolTip(self.ent_prefix, "只转换带有该前缀的文件")
-
-        # 3) Label 后缀
-        self.lb_suffix = ttk.Label(self.ckb_frame, text="限定后缀：")
-        self.lb_suffix.place(x=170, y=28, width=80, height=25)
-
-        self.ent_suffix = tk.Entry(
-            self.ckb_frame, relief="flat", insertwidth=1)
-        self.ent_suffix.place(x=230, y=30, width=104, height=20)
-        ToolTip(self.ent_suffix, "只转换带有该后缀的文件，包含文件后缀名")
-        # \n符合该后缀的文件将跳过气候检查
-
-        # 4) Label 导出名称
-        self.lb_save_name = ttk.Label(self.ckb_frame, text="导出名称：")
-        self.lb_save_name.place(x=170, y=58, width=80, height=25)
-
-        self.ent_save_name = tk.Entry(
-            self.ckb_frame, relief="flat", insertwidth=1)
-        self.ent_save_name.place(x=230, y=60, width=104, height=20)
-
-        # 按钮区
-        self.btn_frame = ttk.Frame(self)
-        self.btn_frame.place(x=265, y=270, width=420, height=250)
-
-        # 右侧预览区
-        self.image_label = ttk.Label(self, anchor="center", relief="flat")
-        self.image_label.place(
-            x=365, y=200, width=self.image_label_width, height=self.image_label_height)
-
-        self.lb_files.bind("<<ListboxSelect>>", self.file_on_select)
-        self.show_preview(Image.new("RGB", (10, 10), (255, 255, 255)))
-
-    # --------- 行为逻辑 ---------
 
     def get_source_pal(self, file):
         '''
@@ -310,7 +343,7 @@ class FilesTab(ttk.Frame):
         :start_index: 起始序号
         '''
         raw_text = self.ent_save_name.get().split("\n", 1)[0]
-    
+
         if not raw_text:
             return "", 1
 
@@ -320,7 +353,8 @@ class FilesTab(ttk.Frame):
             return raw_text, 1
 
         if at_count > 1:
-            self.log("导出名称存在多个@，使用原名称\n导出名称格式应为 [文本@起始序号] 或 [文本]，只能包含 0 或 1 个 @","WARN")
+            self.log(
+                "导出名称存在多个@，使用原名称\n导出名称格式应为 [文本@起始序号] 或 [文本]，只能包含 0 或 1 个 @", "WARN")
             return raw_text, 1
 
         text, index_str = raw_text.split("@")
@@ -328,7 +362,8 @@ class FilesTab(ttk.Frame):
         start_index = self.get_int(index_str)
 
         if not text or start_index is None:
-            self.log("导出名称中 [文本] 为空 或 [起始序号] 错误，使用原名称\n""导出名称格式应为 [文本@起始序号] 或 [文本]","WARN")
+            self.log(
+                "导出名称中 [文本] 为空 或 [起始序号] 错误，使用原名称\n""导出名称格式应为 [文本@起始序号] 或 [文本]", "WARN")
             return raw_text, 1
         return text, start_index
 
@@ -437,10 +472,10 @@ class FilesTab(ttk.Frame):
             render_img, palette = self.render_preview(file)
             self.show_preview(render_img, palette)
 
-        elif self.lb_show_type == "PAGE_2":
+        elif self.lb_show_type == "PAGE_2" or self.lb_show_type == "PAGE_4":
             index = self.lb_files.curselection()[0]
             file = self.full_paths[index]
-            
+
             render_img = Image.open(file).convert(
                 "RGBA")  # self.render_preview(file)
             self.show_preview(render_img)
@@ -591,6 +626,10 @@ class FilesTab(ttk.Frame):
             config.set(SECTION_LIST, DIR_TMP_CONVERT,
                        "\n".join(self.full_paths))
 
+        if self.lb_show_type == "PAGE_4":
+            config.set(SECTION_LIST, DIR_ZDATA,
+                       "\n".join(self.full_paths))
+
         config[SECTION_PATH] = {
             DIR_PAL_SOURCE: self.path_pal_source,
             DIR_PAL_TARGET: self.path_pal_target,
@@ -653,6 +692,8 @@ class FilesTab(ttk.Frame):
             list_name = DIR_IMAGE
         if self.lb_show_type == "PAGE_3":
             list_name = DIR_TMP_CONVERT
+        if self.lb_show_type == "PAGE_4":
+            list_name = DIR_ZDATA
 
         raw = config.get(SECTION_LIST, list_name, fallback="")
         self.lst_files = [i for i in raw.splitlines(

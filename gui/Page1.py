@@ -20,61 +20,53 @@ class Tab_One(FilesTab):
 
         self.lb_show_type = "PAGE_1"
         # ----- 文件夹选择
-
+        self.lb_template.place_forget()
         self.ent_template.place_forget()
         self.btn_template.place_forget()
+
+        self.lb_pal_target.place_forget()
         self.ent_pal_target.place_forget()
         self.btn_pal_target.place_forget()
+
         self.ckb_auto_pal_target.place_forget()
+
+        self.path_frame.place(x=10, y=385, width=880, height=120 - 30)
+        self.setting_frame.place(x=10, y=515 - 30, width=880, height=120)
 
         ToolTip(self.ckb_auto_pal_source,
                 "根据 TMP 文件后缀 在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
-        # ----- 选项设置
 
-        # 按钮区
-        ttk.Button(self.btn_frame, text="添加",
-                   command=self.btn_add_files).place(x=3, y=0, width=80, height=25)
-        ttk.Button(self.btn_frame, text="移除",
-                   command=self.btn_remove_selected).place(x=3, y=30, width=80, height=25)
-        ttk.Button(self.btn_frame, text="清空全部",
-                   command=self.btn_remove_all).place(x=3, y=60, width=80, height=25)
-        ttk.Button(self.btn_frame, text="导出",
-                   command=self.btn_run).place(x=3, y=110, width=80, height=25)
+        ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
+                                    "导出文件将会命名为 [文本][起始序号].[png/bmp]")
 
-        # 导出设置
-        self.ckb_frame.place(x=270, y=90, width=500, height=300)
+        # 导出 Zdata
+        self.var_zdata_mode = tk.StringVar(value="disable")
+
+        self.ckb_zdata_mode = ttk.Checkbutton(
+            self.setting_frame, text="Zdata 模式", variable=self.var_zdata_mode, onvalue="enable", offvalue="disable")
+
+        self.ckb_zdata_mode.place(x=10, y=50, width=100, height=25)
+
+        ToolTip(self.ckb_zdata_mode,
+                "导出图像的 Zdata\n原始值 0-29对应图像 (0,0,0) 到 (232,232,232)")
 
         # 导出 PNG
         self.var_exp_png = tk.StringVar(value="enable")
 
         self.ckb_exp_png = ttk.Checkbutton(
-            self.ckb_frame, text="导出 PNG", variable=self.var_exp_png, onvalue="enable", offvalue="disable")
+            self.setting_frame, text="导出 PNG", variable=self.var_exp_png, onvalue="enable", offvalue="disable")
 
-        self.ckb_exp_png.place(x=0, y=25, width=80, height=25)
+        self.ckb_exp_png.place(x=150, y=20, width=80, height=25)
         ToolTip(self.ckb_exp_png, "导出为 PNG 文件")
 
         # 导出 BMP
         self.var_exp_bmp = tk.StringVar(value="disable")
 
         self.ckb_exp_bmp = ttk.Checkbutton(
-            self.ckb_frame, text="导出 BMP", variable=self.var_exp_bmp, onvalue="enable", offvalue="disable")
+            self.setting_frame, text="导出 BMP", variable=self.var_exp_bmp, onvalue="enable", offvalue="disable")
 
-        self.ckb_exp_bmp.place(x=0, y=50, width=80, height=25)
+        self.ckb_exp_bmp.place(x=150, y=50, width=80, height=25)
         ToolTip(self.ckb_exp_bmp, "导出为 BMP 文件")
-
-        # 导出 Zdata
-        self.var_zdata_mode = tk.StringVar(value="disable")
-
-        self.ckb_zdata_mode = ttk.Checkbutton(
-            self.ckb_frame, text="Zdata 模式", variable=self.var_zdata_mode, onvalue="enable", offvalue="disable")
-
-        self.ckb_zdata_mode.place(x=0, y=75, width=100, height=25)
-
-        ToolTip(self.ckb_zdata_mode,
-                "导出图像的 Zdata\n原始值 0-29对应图像 (0,0,0) 到 (232,232,232)")
-
-        ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
-                                    "导出文件将会命名为 [文本][起始序号].[png/bmp]")
 
     # --------- 导出图像 ---------
     def is_valid_pil_image(self, img: Image.Image):

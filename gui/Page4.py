@@ -14,23 +14,41 @@ from pathlib import Path
 from gui.gui import FilesTab, ToolTip
 
 
-class Tab_Two(FilesTab):
+class Tab_Four(FilesTab):
     def _init_ui(self):
         super()._init_ui()
 
-        self.lb_show_type = "PAGE_2"
+        self.lb_show_type = "PAGE_4"
 
-        self.lb_pal_target.place_forget()
         self.ent_pal_target.place_forget()
         self.btn_pal_target.place_forget()
-
         self.ckb_auto_pal_target.place_forget()
 
         ToolTip(self.ckb_auto_pal_source,
                 "根据设置的导出文件后缀在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
 
-        ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
-                                    "导出文件将会命名为 [文本][起始序号].[气候名]")
+        # 按钮区
+
+        ttk.Button(self.btn_frame, text="添加",
+                   command=self.btn_add_files).place(x=3, y=0, width=80, height=25)
+        ttk.Button(self.btn_frame, text="移除",
+                   command=self.btn_remove_selected).place(x=3, y=30, width=80, height=25)
+        ttk.Button(self.btn_frame, text="清空全部",
+                   command=self.btn_remove_all).place(x=3, y=60, width=80, height=25)
+        ttk.Button(self.btn_frame, text="导出文件",
+                   command=self.btn_run).place(x=3, y=110, width=80, height=25)
+
+        # 导出设置
+        self.setting_frame.place(x=270, y=105, width=500, height=300)
+
+        self.lb_save_name.place(x=120)
+        self.ent_save_name.place(x=178)
+
+        self.lb_prefix.place(x=120)
+        self.ent_prefix.place(x=178)
+
+        self.lb_suffix.place(x=120)
+        self.ent_suffix.place(x=178)
 
         self.var_auto_radar = tk.StringVar(value="enable")
         self.var_impt_img = tk.StringVar(value="enable")
@@ -38,17 +56,17 @@ class Tab_Two(FilesTab):
 
         self.ckb_auto_radar = ttk.Checkbutton(
             self.setting_frame, text="自动雷达色", variable=self.var_auto_radar, onvalue="enable", offvalue="disable")
-        self.ckb_auto_radar.place(x=10, y=50, width=100, height=25)
+        self.ckb_auto_radar.place(x=0, y=25, width=100, height=25)
         ToolTip(self.ckb_auto_radar, "自动修改雷达色")
 
         self.ckb_impt_img = ttk.Checkbutton(
             self.setting_frame, text="导入图像", variable=self.var_impt_img, onvalue="enable", offvalue="disable")
-        self.ckb_impt_img.place(x=150, y=20, width=100, height=25)
+        self.ckb_impt_img.place(x=0, y=50, width=100, height=25)
         ToolTip(self.ckb_impt_img, "导入 Normal 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
 
         self.ckb_impt_ext = ttk.Checkbutton(
             self.setting_frame, text="导入额外图像", variable=self.var_impt_ext, onvalue="enable", offvalue="disable")
-        self.ckb_impt_ext.place(x=150, y=50, width=100, height=25)
+        self.ckb_impt_ext.place(x=0, y=75, width=100, height=25)
         ToolTip(self.ckb_impt_ext, "导入 Extra 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
 
         # 指定模板
@@ -62,11 +80,10 @@ class Tab_Two(FilesTab):
                 "使用选中模板：按 [当前选中模板] 导出全部文件\n"
                 "图像文件名匹配：在 [图像所在文件夹] 中选择图像同名文件\n"
                 "模板文件夹匹配：在 [当前选中模板所在文件夹] 中选择图像同名文件\n"
-                "匹配时默认 自动选择色盘 转换对应气候")
-
+                "匹配时默认使用 自动色盘 转换对应气候")
         ttk.Label(self.setting_frame, text="导出模式：").place(
-            x=500, y=0, width=60, height=20)
-        self.cb_specify_template.place(x=500, y=25, width=115, height=24)
+            x=320, y=0, width=60, height=20)
+        self.cb_specify_template.place(x=320, y=25, width=115, height=24)
         self.cb_specify_template.current(0)
 
         self.var_output_theater = tk.StringVar()
@@ -80,9 +97,14 @@ class Tab_Two(FilesTab):
             state="readonly")
         ToolTip(self.cb_output_theater,
                 "导出文件的气候类型")
-        self.cb_output_theater.place(x=500, y=60, width=115, height=24)
+        self.cb_output_theater.place(x=320, y=60, width=115, height=24)
         self.cb_output_theater.current(0)
 
+        # 模板
+        self.path_frame.place(height=85)
+
+        ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
+                                    "导出文件将会命名为 [文本][起始序号].[气候名]")
     # --------- 行为逻辑 ---------
 
     def btn_add_files(self):
@@ -157,7 +179,7 @@ class Tab_Two(FilesTab):
             change_normal=self.var_impt_img.get() == "enable",
             change_extra=self.var_impt_ext.get() == "enable"
         )
-
+        
         self.show_preview(Image.open(import_img))
 
         if not ok:
@@ -171,7 +193,7 @@ class Tab_Two(FilesTab):
         self._ensure_template_copy(template_tmp, save_path)
         impt.save_tmpfile(tmp, save_path)
         return True
-
+    
     def btn_run(self):
         self.safe_call(self.btn_run_safe)
 

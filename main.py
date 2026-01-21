@@ -14,6 +14,7 @@ import sys
 from gui.Page1 import Tab_One
 from gui.Page2 import Tab_Two
 from gui.Page3 import Tab_Three
+from gui.Page4 import Tab_Four
 
 # pyinstaller -w main.py
 
@@ -60,10 +61,10 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("TMP 转换")
-        self.geometry("800x720")
+        self.geometry("920x864")
 
         notebook = ttk.Notebook(self)
-        notebook.place(x=10, y=10, width=780, height=600)
+        notebook.place(x=10, y=10, width=900, height=670)
 
         # 第一标签页
         self.tab_1 = Tab_One(notebook, self.append_log)
@@ -77,18 +78,22 @@ class App(tk.Tk):
         self.tab_3 = Tab_Three(notebook, self.append_log)
         notebook.add(self.tab_3, text="气候转换")
 
+        # # 第四标签页
+        # self.tab_4 = Tab_Four(notebook, self.append_log)
+        # notebook.add(self.tab_4, text="Zdata")
+
         notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
         self._init_log()
 
     def _init_log(self):
         log_frame = ttk.Frame(self)
-        log_frame.place(x=20, y=450, width=760, height=250)
+        log_frame.place(x=10, y=680, width=900, height=184)
 
-        ttk.Label(log_frame, text="Log:", relief="flat").pack(anchor=tk.W)
+        ttk.Label(log_frame, text="Log:", relief="flat").place(x=10, y=0, width=80,  height=20)
 
         self.txt_log = tk.Text(log_frame, height=6, font=10,
                                state=tk.DISABLED, wrap=tk.WORD)
-        self.txt_log.pack(fill=tk.BOTH, expand=True)
+        self.txt_log.place(x=5, y=24, width=850,  height=150)
         self.txt_log.tag_config(
             "INFO", foreground="#858585", font=("SimSun", 10))
         self.txt_log.tag_config(
@@ -99,6 +104,12 @@ class App(tk.Tk):
             "SUCCESS", foreground="#36BB53", font=("SimSun", 10))
         self.txt_log.tag_config(
             "PASS", foreground="#858585", font=("SimSun", 6))
+        
+        sb2 = ttk.Scrollbar(log_frame, orient=tk.VERTICAL,
+                           command=self.txt_log.yview)
+                           
+        sb2.place(x=855, y=24, height=150)
+        self.txt_log.config(yscrollcommand=sb2.set)
 
     def append_log(self, msg, level="INFO"):
         self.txt_log.config(state=tk.NORMAL)

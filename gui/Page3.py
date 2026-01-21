@@ -20,66 +20,45 @@ class Tab_Three(FilesTab):
 
         self.lb_show_type = "PAGE_3"
 
+        self.lb_template.place_forget()
         self.ent_template.place_forget()
         self.btn_template.place_forget()
 
-        self.btn_pal_source.config(text="原色盘")
-        self.btn_pal_target.config(text="新色盘")
+        self.btn_pal_source.config(text="选择原色盘")
+        self.btn_pal_target.config(text="选择新色盘")
 
-        ttk.Label(self.ckb_frame, text="自动色盘：").place(
-            x=0, y=0, width=80, height=25)
-
-        self.ckb_auto_pal_source.config(text="原地形")
-        self.ckb_auto_pal_source.place(x=0, y=25, width=80, height=25)
+        self.ckb_auto_pal_source.config(text="自动选择色盘 - 原地形")
+        self.ckb_auto_pal_source.place(x=10, y=20, width=160, height=25)
 
         ToolTip(self.ckb_auto_pal_source,
                 "根据 原 TMP 文件后缀 在 [原色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
         ToolTip(self.ckb_auto_pal_target,
                 "根据 需要导出的文件后缀 在 [新色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
-        # 按钮区
-
-        ttk.Button(self.btn_frame, text="添加",
-                   command=self.btn_add_files).place(x=3, y=0, width=80, height=25)
-        ttk.Button(self.btn_frame, text="移除",
-                   command=self.btn_remove_selected).place(x=3, y=30, width=80, height=25)
-        ttk.Button(self.btn_frame, text="清空全部",
-                   command=self.btn_remove_all).place(x=3, y=60, width=80, height=25)
-        ttk.Button(self.btn_frame, text="导出文件",
-                   command=self.btn_run).place(x=3, y=110, width=80, height=25)
+        
+        ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
+                                    "导出文件将会命名为 [文本][起始序号].[气候名]")
+        
 
         # 导出设置
-        self.ckb_frame.place(x=270, y=105, width=500, height=300)
 
-        self.lb_save_name.place(x=120)
-        self.ent_save_name.place(x=178)
-
-        self.lb_prefix.place(x=120)
-        self.ent_prefix.place(x=178)
-
-        self.lb_suffix.place(x=120)
-        self.ent_suffix.place(x=178)
-
-        ttk.Label(self.ckb_frame, text="导出模式：").place(
-            x=320, y=0, width=60, height=20)
+        ttk.Label(self.setting_frame, text="导出模式：").place(
+            x=500, y=0, width=60, height=20)
 
         self.var_output_theater = tk.StringVar()
         self.output_theater_values = ["转换为"+i[1:] for i in self.theaters]
 
         self.cb_output_theater = ttk.Combobox(
-            self.ckb_frame,
+            self.setting_frame,
             textvariable=self.var_output_theater,
             values=self.output_theater_values,
             state="readonly")
         ToolTip(self.cb_output_theater,
                 "导出文件的气候类型")
-        self.cb_output_theater.place(x=320, y=30, width=115, height=24)
+        self.cb_output_theater.place(x=500, y=30, width=115, height=24)
         self.cb_output_theater.current(0)
 
-        # 模板
-        self.path_frame.place(height=85)
 
-        ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
-                                    "导出文件将会命名为 [文本][起始序号].[气候名]")
+
     # --------- 行为逻辑 ---------
 
     def btn_add_files(self):
