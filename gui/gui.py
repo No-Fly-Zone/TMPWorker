@@ -237,7 +237,7 @@ class FilesTab(ttk.Frame):
 
         # ----- 选项设置 -----
 
-        # x=220, y=5, 
+        # x=220, y=5,
         # x=350, y=30,
 
         self.setting_frame = ttk.Labelframe(self, text="导出选项")
@@ -297,10 +297,10 @@ class FilesTab(ttk.Frame):
         self.cb_preset.place(x=332, y=67, width=155, height=23)
         self.cb_preset.current(0)
         ToolTip(self.cb_preset,
-        "选择导出文件名的后缀预设规则，列表中的内容可在配置文件中进行修改\n"  
-        "* 为： 导出文件名 + 文件序号\n"  
-        "文件将按顺序生成逗号分隔的多个项\n"  
-        "具体示例参照配置文件")
+                "选择导出文件名的后缀预设规则，列表中的内容可在配置文件中进行修改\n"
+                "* 为： 导出文件名 + 文件序号\n"
+                "文件将按顺序生成逗号分隔的多个项\n"
+                "具体示例参照配置文件")
 
         self.btn_runbtn = ttk.Button(
             self.setting_frame, text="开始导出", command=self.btn_run)
@@ -407,7 +407,7 @@ class FilesTab(ttk.Frame):
         '''
         preset_index = int(self.var_preset.get()[:2]) - 1
         # print(preset_index, self.var_preset.get())
-        
+
         use_preset = self.preset_value[preset_index].split(",")
 
         current_preset = use_preset[process_index % len(use_preset)]
@@ -420,7 +420,7 @@ class FilesTab(ttk.Frame):
 
         text_save_name = text_save_name + \
             str(current_index + start_index).zfill(width)
-        rst = current_preset.replace("*",text_save_name)
+        rst = current_preset.replace("*", text_save_name)
 
         print(rst)
         return rst
@@ -828,10 +828,12 @@ class FilesTab(ttk.Frame):
         if not config.has_section(SECTION_LIST):
             config.add_section(SECTION_LIST)
         config[SECTION_EXP_NAME] = {
-            "0": "*,*a-*g...",
-            "1": "*,*a...",
-            "2": "*01-*99",
-            "3": "*01a-*99a"
+            "0": "*",
+            "1": "*,*a-*g",
+            "2": "*,*a",
+            "3": "*a",
+            "4": "*,*b",
+            "5": "*b"
         }
         config[SECTION_EXP_PRESET] = {
             "0": "*",
@@ -857,7 +859,7 @@ class FilesTab(ttk.Frame):
                             k, v in config[SECTION_EXP_NAME].items()]
 
         self.preset_value = [v for
-                            k, v in config[SECTION_EXP_PRESET].items()]
+                             k, v in config[SECTION_EXP_PRESET].items()]
 
         # # 2) 刷新色盘列表
         # self.path_template = self.isfile(config.get(

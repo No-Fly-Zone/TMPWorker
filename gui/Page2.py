@@ -250,16 +250,16 @@ class Tab_Two(FilesTab):
                 failed_count += 1
 
         self.log("", "PASS")
-        
+
         if failed_count == 0:
             self.log(f"已导出全部{total}个文件\n\n", "SUCCESS")
         elif failed_count == total:
             self.log(
                 f"全部{total}个文件导出失败！ \n\n",
                 "ERROR"
-                )
+            )
         else:
             self.log(
                 f"已导出{total - failed_count}/{total}个文件，其中{failed_count}个文件发生错误\n\n",
                 "WARN"
-                )
+            )

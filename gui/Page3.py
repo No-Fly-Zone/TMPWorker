@@ -187,9 +187,9 @@ class Tab_Three(FilesTab):
             self.log(
                 f"全部{total}个文件导出失败！ \n\n",
                 "ERROR"
-                )
+            )
         else:
             self.log(
                 f"已导出{total - failed_count}/{total}个文件，其中{failed_count}个文件发生错误\n\n",
                 "WARN"
-                )
+            )
