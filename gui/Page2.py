@@ -38,17 +38,17 @@ class Tab_Two(FilesTab):
 
         self.ckb_auto_radar = ttk.Checkbutton(
             self.setting_frame, text="自动雷达色", variable=self.var_auto_radar, onvalue="enable", offvalue="disable")
-        self.ckb_auto_radar.place(x=10, y=50, width=100, height=25)
+        self.ckb_auto_radar.place(x=220, y=30, width=100, height=25)
         ToolTip(self.ckb_auto_radar, "自动修改雷达色")
 
         self.ckb_impt_img = ttk.Checkbutton(
             self.setting_frame, text="导入图像", variable=self.var_impt_img, onvalue="enable", offvalue="disable")
-        self.ckb_impt_img.place(x=150, y=20, width=100, height=25)
+        self.ckb_impt_img.place(x=350, y=5, width=100, height=25)
         ToolTip(self.ckb_impt_img, "导入 Normal 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
 
         self.ckb_impt_ext = ttk.Checkbutton(
             self.setting_frame, text="导入额外图像", variable=self.var_impt_ext, onvalue="enable", offvalue="disable")
-        self.ckb_impt_ext.place(x=150, y=50, width=100, height=25)
+        self.ckb_impt_ext.place(x=350, y=30, width=100, height=25)
         ToolTip(self.ckb_impt_ext, "导入 Extra 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
 
         # 指定模板
@@ -126,13 +126,12 @@ class Tab_Two(FilesTab):
 
         return ""
 
-    def _build_save_path(self, import_img, save_index, total, output_theater):
+    def _build_save_path(self, import_img, total, output_theater, process_index):
 
-        text_save_name, start_index = self.get_output_text_name()
+        text_save_name = self.get_export_name(total, process_index)
 
         if text_save_name:
-            width = len(str(total))
-            name = f"{text_save_name}{str(save_index + start_index - 1).zfill(width)}{output_theater}"
+            name = f"{text_save_name}{output_theater}"
         else:
             name = f"{Path(import_img).stem}{output_theater}"
 
@@ -200,7 +199,8 @@ class Tab_Two(FilesTab):
             messagebox.showwarning("Warning", "Not file choosed")
             return
 
-        self.log(f"开始导出已选择的{len(render_files)}个文件")
+        total = len(render_files)
+        self.log(f"开始导出已选择的{total}个文件")
         self.save_config()
         self.load_config()
 
@@ -220,45 +220,46 @@ class Tab_Two(FilesTab):
         else:
             save_theater = "." + self.var_output_theater.get()[3:].lower()
 
-        save_index = 1
-        log_warns = 0
-        total = len(render_files)
+        failed_count = 0
 
-        for i, import_img in enumerate(render_files, 1):
-            self.log(f"正在导出第{i}个文件 {import_img}")
+        for i, img_path in enumerate(render_files, 1):
+            self.log(f"正在导出第{i}个文件 {img_path}")
 
             template_tmp = self._find_template(
                 mode,
-                import_img,
-                Path(import_img).stem,
+                img_path,
+                Path(img_path).stem,
                 save_theater
             )
 
             if not template_tmp:
-                self.log(f"文件 {import_img}\n未找到对应模板", "ERROR")
-                log_warns += 1
+                self.log(f"文件 {img_path}\n未找到对应模板", "ERROR")
+                failed_count += 1
                 continue
 
             palette = self.get_source_pal(save_theater)
             save_path = self._build_save_path(
-                import_img, save_index, total, save_theater
+                img_path, total, save_theater, i
             )
 
-            ok = self._process_one(
-                import_img, template_tmp, palette, save_path
-            )
-
-            if ok:
+            if self._process_one(
+                img_path, template_tmp, palette, save_path
+            ):
                 self.log(f"已导出第{i}个文件 {save_path}")
-                save_index += 1
             else:
-                log_warns += 1
+                failed_count += 1
 
         self.log("", "PASS")
-        if log_warns == 0:
-            self.log(f"已导出全部{total}文件\n\n", "SUCCESS")
+        
+        if failed_count == 0:
+            self.log(f"已导出全部{total}个文件\n\n", "SUCCESS")
+        elif failed_count == total:
+            self.log(
+                f"全部{total}个文件导出失败！ \n\n",
+                "ERROR"
+                )
         else:
             self.log(
-                f"已导出{total - log_warns}/{total}个文件，其中{log_warns}个文件发生错误\n\n",
+                f"已导出{total - failed_count}/{total}个文件，其中{failed_count}个文件发生错误\n\n",
                 "WARN"
-            )
+                )

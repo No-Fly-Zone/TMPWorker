@@ -150,7 +150,7 @@ class Tab_Four(FilesTab):
 
     def _build_save_path(self, import_img, save_index, total, output_theater):
 
-        text_save_name, start_index = self.get_output_text_name()
+        text_save_name, start_index = self.get_export_name()
 
         if text_save_name:
             width = len(str(total))

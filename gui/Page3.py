@@ -34,10 +34,9 @@ class Tab_Three(FilesTab):
                 "根据 原 TMP 文件后缀 在 [原色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
         ToolTip(self.ckb_auto_pal_target,
                 "根据 需要导出的文件后缀 在 [新色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
-        
+
         ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
                                     "导出文件将会命名为 [文本][起始序号].[气候名]")
-        
 
         # 导出设置
 
@@ -57,8 +56,6 @@ class Tab_Three(FilesTab):
         self.cb_output_theater.place(x=500, y=30, width=115, height=24)
         self.cb_output_theater.current(0)
 
-
-
     # --------- 行为逻辑 ---------
 
     def btn_add_files(self):
@@ -72,13 +69,12 @@ class Tab_Three(FilesTab):
 
     # --------- 导出图像 ---------
 
-    def _build_save_path(self, import_img, save_index, total, output_theater):
+    def _build_save_path(self, import_img, total, output_theater, process_index):
 
-        text_save_name, start_index = self.get_output_text_name()
+        text_save_name = self.get_export_name(total, process_index)
 
         if text_save_name:
-            width = len(str(total))
-            name = f"{text_save_name}{str(save_index + start_index - 1).zfill(width)}{output_theater}"
+            name = f"{text_save_name}{output_theater}"
         else:
             name = f"{Path(import_img).stem}{output_theater}"
 
@@ -147,51 +143,53 @@ class Tab_Three(FilesTab):
             messagebox.showwarning("Warning", "Not file choosed")
             return
 
-        self.log(f"开始导出已选择的{len(render_files)}个文件")
+        total = len(render_files)
+        self.log(f"开始导出已选择的{total}个文件")
         self.save_config()
         self.load_config()
 
         output_theater = "." + self.var_output_theater.get()[3:].lower()
 
-        save_index = 1
-        log_warns = 0
-        total = len(render_files)
+        failed_count = 0
 
-        for i, file in enumerate(render_files, 1):
-            self.log(f"正在导出第{i}个文件 {file}")
+        for i, tmp_path in enumerate(render_files, 1):
+            self.log(f"正在导出第{i}个文件 {tmp_path}")
 
-            tmp = TmpFile(file)
-            pal_source = self.get_source_pal(file)
+            tmp = TmpFile(tmp_path)
+            pal_source = self.get_source_pal(tmp_path)
 
             re_image = render.render_full_png(
                 tmp, pal_source, output_img="",
                 render_extra=True, out_bmp=False, out_png=False)
             if re_image == None:
-                self.log(f"第{i+1}个文件 {file}导出失败", "WARN")
-                log_warns += 1
+                self.log(f"第{i+1}个文件 {tmp_path}导出失败", "WARN")
+                failed_count += 1
                 continue
 
             pal_target = self.get_target_pal(output_theater)
 
             save_path = self._build_save_path(
-                file, save_index, total, output_theater
+                tmp_path, total, output_theater, i
             )
 
-            ok = self._process_one(
-                re_image, file, pal_target, save_path
-            )
-
-            if ok:
+            if self._process_one(
+                re_image, tmp_path, pal_target, save_path
+            ):
                 self.log(f"已导出第{i}个文件 {save_path}")
-                save_index += 1
             else:
-                log_warns += 1
+                failed_count += 1
 
         self.log("", "PASS")
-        if log_warns == 0:
-            self.log(f"已导出全部{total}文件\n\n", "SUCCESS")
+
+        if failed_count == 0:
+            self.log(f"已导出全部{total}个文件\n\n", "SUCCESS")
+        elif failed_count == total:
+            self.log(
+                f"全部{total}个文件导出失败！ \n\n",
+                "ERROR"
+                )
         else:
             self.log(
-                f"已导出{total - log_warns}/{total}个文件，其中{log_warns}个文件发生错误\n\n",
+                f"已导出{total - failed_count}/{total}个文件，其中{failed_count}个文件发生错误\n\n",
                 "WARN"
-            )
+                )

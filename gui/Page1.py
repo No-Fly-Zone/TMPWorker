@@ -19,6 +19,7 @@ class Tab_One(FilesTab):
         super()._init_ui()
 
         self.lb_show_type = "PAGE_1"
+        
         # ----- 文件夹选择
         self.lb_template.place_forget()
         self.ent_template.place_forget()
@@ -45,7 +46,7 @@ class Tab_One(FilesTab):
         self.ckb_zdata_mode = ttk.Checkbutton(
             self.setting_frame, text="Zdata 模式", variable=self.var_zdata_mode, onvalue="enable", offvalue="disable")
 
-        self.ckb_zdata_mode.place(x=10, y=50, width=100, height=25)
+        self.ckb_zdata_mode.place(x=220, y=30, width=100, height=25)
 
         ToolTip(self.ckb_zdata_mode,
                 "导出图像的 Zdata\n原始值 0-29对应图像 (0,0,0) 到 (232,232,232)")
@@ -56,7 +57,7 @@ class Tab_One(FilesTab):
         self.ckb_exp_png = ttk.Checkbutton(
             self.setting_frame, text="导出 PNG", variable=self.var_exp_png, onvalue="enable", offvalue="disable")
 
-        self.ckb_exp_png.place(x=150, y=20, width=80, height=25)
+        self.ckb_exp_png.place(x=350, y=5, width=80, height=25)
         ToolTip(self.ckb_exp_png, "导出为 PNG 文件")
 
         # 导出 BMP
@@ -65,122 +66,113 @@ class Tab_One(FilesTab):
         self.ckb_exp_bmp = ttk.Checkbutton(
             self.setting_frame, text="导出 BMP", variable=self.var_exp_bmp, onvalue="enable", offvalue="disable")
 
-        self.ckb_exp_bmp.place(x=150, y=50, width=80, height=25)
+        self.ckb_exp_bmp.place(x=350, y=30, width=80, height=25)
         ToolTip(self.ckb_exp_bmp, "导出为 BMP 文件")
 
-    # --------- 导出图像 ---------
-    def is_valid_pil_image(self, img: Image.Image):
-
-        if img is None:
-            return False
-
-        if not isinstance(img, Image.Image):
-            return False
-
-        w, h = img.size
-        if w <= 0 or h <= 0:
-            return False
-
-        if img.getbbox() is None:
-            return False
-        
-        # WWSB=yes
-        # 斜坡13号地形是空的
-        
-        WWSB=True
-        return WWSB
-    
     def btn_run(self):
         self.safe_call(self.btn_run_safe)
 
     def btn_run_safe(self):
-        self.path_pal_source = self.ent_pal_source.get()
-        self.path_pal_source = self.ent_pal_source.get()
-        self.path_out_floder = self.ent_out_floder.get()
-        
+
+        # ========= 基础参数 =========
+        pal_source = self.ent_pal_source.get()
+        out_folder = self.ent_out_floder.get().strip()
+
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
 
-        bmp = self.var_exp_bmp.get() == "enable"
-        png = self.var_exp_png.get() == "enable"
-        if not (bmp or png):
+        export_bmp = self.var_exp_bmp.get() == "enable"
+        export_png = self.var_exp_png.get() == "enable"
+
+        # ========= 参数校验 =========
+        if not (export_bmp or export_png):
             messagebox.showwarning("警告", "未选择导出格式")
             return
-        if not Path(self.path_pal_source).is_file():
+
+        if not Path(pal_source).is_file():
             messagebox.showwarning("警告", "未选择色盘")
             return
 
-        self.lst_files = self.full_paths.copy()
-        # 选取的文件
+        # ========= 导出文件 =========
         render_files = [
-            str(Path(p))    # 斜杠方向
-            for p in self.lst_files
-            if Path(p).is_file() and
-            Path(p).name.startswith(prefix) and
-            Path(p).name.endswith(suffix)
+            Path(p)
+            for p in self.full_paths
+            if Path(p).is_file()
+            and p.startswith(prefix)
+            and p.endswith(suffix)
         ]
-
 
         if not render_files:
             messagebox.showwarning("警告", "未选择需要导出的 TMP 文件")
             return
 
-        self.log(f"开始导出已选择的 {len(render_files)} 个文件")
+        total = len(render_files)
+        self.log(f"开始导出已选择的 {total} 个文件")
         self.save_config()
         self.load_config()
 
-        # 调用
-        log_warns = 0
-        save_index = 1
-        for i, file in enumerate(render_files):
-            if self.path_out_floder == "":
-                self.path_out_floder = str(Path(file).parent)
-            # 色盘
-            palette = self.get_source_pal(file)
-            # print(palette)
-            self.log(f"正在导出第{i+1}个文件 {file}")
+        failed_count = 0
 
-            # text_save_name = self.ent_save_name.get().split("\n")[0]
-            # print(self.path_out_floder)
-            text_save_name, start_index = self.get_output_text_name()
-            # 指定保存名称
-            if not text_save_name == "":
-                output_img = str(self.path_out_floder + "\\" + text_save_name +
-                                 str(save_index + start_index - 1).zfill(len(str(len(render_files)))))
-                save_index += 1
-            else:
-                # print(str(Path(file).name))
-                output_img = self.path_out_floder + \
-                    "\\" + str(Path(file).name)[:-4]
+        # ========= 主循环 =========
+        for index, img_path in enumerate(render_files, start=1):
 
-            tmp = TmpFile(file)
+            # 默认输出目录
+            target_dir = Path(out_folder) if out_folder else img_path.parent
+            target_dir.mkdir(parents=True, exist_ok=True)
 
-            if not Path(self.path_out_floder).exists():
-                Path(self.path_out_floder).mkdir(parents=True, exist_ok=True)
+            palette = self.get_source_pal(str(img_path))
+            self.log(f"正在导出第{index}个文件 {img_path}")
 
+            # 输出文件名
+            export_name = self.get_export_name(total, index - 1)
+            base_name = export_name if export_name else img_path.stem
+            output_base = target_dir / base_name
+
+            tmp_file = TmpFile(str(img_path))
+
+            # ========= 渲染 =========
             if self.var_zdata_mode.get() == "disable":
-                re_image = render.render_full_png(
-                                          tmp, palette, output_img,
-                                          render_extra=True, out_bmp=bmp, out_png=png)
+                image = render.render_full_png(
+                    tmp_file,
+                    palette,
+                    str(output_base),
+                    render_extra=True,
+                    out_bmp=export_bmp,
+                    out_png=export_png
+                )
             else:
-                re_image = render.render_full_ZData(
-                                          tmp, output_img, out_bmp=bmp, out_png=png)
-                output_img += "_z"
+                image = render.render_full_ZData(
+                    tmp_file,
+                    str(output_base),
+                    out_bmp=export_bmp,
+                    out_png=export_png
+                )
+                output_base = Path(f"{output_base}_z")
 
-            if not self.is_valid_pil_image(re_image):
-                self.log(f"第{i+1}个文件 {file}导出失败", "WARN")
-                log_warns += 1
-            else:
-                self.show_preview(re_image)
+            # ========= 结果处理 =========
+            if not self.is_valid_pil_image(image):
+                self.log(f"第{index}个文件导出失败：{img_path}", "WARN")
+                failed_count += 1
+                continue
 
-                if bmp:
-                    self.log(f"已导出第{i+1}个文件 {str(Path(output_img + ".bmp"))}")
-                if png:
-                    self.log(f"已导出第{i+1}个文件 {str(Path(output_img + ".png"))}")
+            self.show_preview(image)
 
-        self.log(f"", "PASS")
-        if log_warns == 0:
-            self.log(f"已导出全部{i+1}文件\n\n", "SUCCESS")
+            if export_bmp:
+                self.log(f"已导出 BMP：{output_base.with_suffix('.bmp')}")
+            if export_png:
+                self.log(f"已导出 PNG：{output_base.with_suffix('.png')}")
+
+        self.log("", "PASS")
+
+        if failed_count == 0:
+            self.log(f"已导出全部{total}个文件\n\n", "SUCCESS")
+        elif failed_count == total:
+            self.log(
+                f"全部{total}个文件导出失败！ \n\n",
+                "ERROR"
+                )
         else:
             self.log(
-                f"已导出{i+1-log_warns}/{i+1}个文件，其中{log_warns}个文件发生错误\n\n", "WARN")
+                f"已导出{total - failed_count}/{total}个文件，其中{failed_count}个文件发生错误\n\n",
+                "WARN"
+                )

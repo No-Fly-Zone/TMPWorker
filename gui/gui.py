@@ -36,7 +36,13 @@ def get_app_dir():
 APP_DIR = get_app_dir()
 CONFIG_DIR = Path(APP_DIR) / "config"
 CONFIG_FILE = "files_config.ini"
-CONFIG_PATH = Path(CONFIG_DIR) / CONFIG_FILE
+SETTING_PATH = Path(CONFIG_DIR) / CONFIG_FILE
+
+PRESET_FILE = "export_config.ini"
+PRESET_PATH = Path(CONFIG_DIR) / PRESET_FILE
+
+SECTION_EXP_NAME = "Names"
+SECTION_EXP_PRESET = "Presets"
 
 SECTION_LIST = "Files"
 DIR_TMP = "TMP_Files"
@@ -123,6 +129,10 @@ class FilesTab(ttk.Frame):
         self.image_label_width = 608
         self.image_label_height = 308
         self.theaters = [".tem", ".urb", ".sno", ".ubn", ".des", ".lun"]
+        self.preset_name = []
+        self.preset_value = []
+        self.load_preset()
+
         self._init_ui()
 
         self.load_config()
@@ -156,7 +166,7 @@ class FilesTab(ttk.Frame):
                    command=self.btn_remove_selected).place(x=74, y=310, width=62, height=25)
         ttk.Button(self.file_frame, text="清空全部",
                    command=self.btn_remove_all).place(x=140, y=310, width=80, height=25)
-        
+
         # 右侧预览区
         self.image_label = ttk.Label(
             self.file_frame, anchor="center", relief="flat")
@@ -165,10 +175,9 @@ class FilesTab(ttk.Frame):
 
         self.lb_files.bind("<<ListboxSelect>>", self.file_on_select)
         self.show_preview(Image.new("RGB", (10, 10), (255, 255, 255)))
-        
+
         # ttk.Button(self.file_frame, text="导出",
         #            command=self.btn_run).place(x=3, y=350, width=80, height=25)
-
 
         # ----- 路径选择 -----
 
@@ -228,6 +237,9 @@ class FilesTab(ttk.Frame):
 
         # ----- 选项设置 -----
 
+        # x=220, y=5, 
+        # x=350, y=30,
+
         self.setting_frame = ttk.Labelframe(self, text="导出选项")
         self.setting_frame.place(x=10, y=515, width=880, height=120)
 
@@ -237,43 +249,62 @@ class FilesTab(ttk.Frame):
         self.ckb_auto_pal_source = ttk.Checkbutton(
             self.setting_frame, text="自动选择色盘", variable=self.var_auto_pal_source, onvalue="enable", offvalue="disable")
 
-        self.ckb_auto_pal_source.place(x=10, y=20, width=110, height=25)
+        self.ckb_auto_pal_source.place(x=220, y=5, width=110, height=25)
 
         self.var_auto_pal_target = tk.StringVar(value="enable")
         self.ckb_auto_pal_target = ttk.Checkbutton(
             self.setting_frame, text="自动选择色盘 - 新地形", variable=self.var_auto_pal_target, onvalue="enable", offvalue="disable")
 
-        self.ckb_auto_pal_target.place(x=10, y=50, width=160, height=25)
+        self.ckb_auto_pal_target.place(x=220, y=30, width=160, height=25)
 
         # 2) Label 前缀
-        self.lb_prefix = ttk.Label(self.setting_frame, text="只转换前缀：")
-        self.lb_prefix.place(x=300, y=0, width=80, height=25)
+        self.lb_prefix = ttk.Label(self.setting_frame, text="仅转换前缀：")
+        self.lb_prefix.place(x=10, y=5, width=80, height=25)
 
         self.ent_prefix = tk.Entry(
             self.setting_frame, relief="flat", insertwidth=1)
-        self.ent_prefix.place(x=375, y=2, width=104, height=20)
+        self.ent_prefix.place(x=85, y=7, width=104, height=20)
         ToolTip(self.ent_prefix, "只转换带有该前缀的文件")
 
         # 3) Label 后缀
-        self.lb_suffix = ttk.Label(self.setting_frame, text="只转换后缀：")
-        self.lb_suffix.place(x=300, y=28, width=80, height=25)
+        self.lb_suffix = ttk.Label(self.setting_frame, text="仅转换后缀：")
+        self.lb_suffix.place(x=10, y=35, width=80, height=25)
 
         self.ent_suffix = tk.Entry(
             self.setting_frame, relief="flat", insertwidth=1)
-        self.ent_suffix.place(x=375, y=30, width=104, height=20)
+        self.ent_suffix.place(x=85, y=37, width=104, height=20)
         ToolTip(self.ent_suffix, "只转换带有该后缀的文件，包含文件后缀名")
         # \n符合该后缀的文件将跳过气候检查
 
         # 4) Label 导出名称
         self.lb_save_name = ttk.Label(self.setting_frame, text="导出文件名：")
-        self.lb_save_name.place(x=300, y=58, width=80, height=25)
+        self.lb_save_name.place(x=10, y=65, width=80, height=25)
 
         self.ent_save_name = tk.Entry(
             self.setting_frame, relief="flat", insertwidth=1)
-        self.ent_save_name.place(x=375, y=60, width=104, height=20)
+        self.ent_save_name.place(x=85, y=67, width=104, height=20)
 
-        self.btn_runbtn = ttk.Button(self.setting_frame, text="开始导出",command=self.btn_run)
-        self.btn_runbtn.place(x=700, y=45, width=120, height=30)
+        self.lb_preset = ttk.Label(self.setting_frame, text="导出文件命名规则：")
+        self.lb_preset.place(x=220, y=67, width=120, height=25)
+
+        self.var_preset = tk.StringVar()
+
+        self.cb_preset = ttk.Combobox(
+            self.setting_frame,
+            textvariable=self.var_preset,
+            values=self.preset_name,
+            state="readonly")
+        self.cb_preset.place(x=332, y=67, width=155, height=23)
+        self.cb_preset.current(0)
+        ToolTip(self.cb_preset,
+        "选择导出文件名的后缀预设规则，列表中的内容可在配置文件中进行修改\n"  
+        "* 为： 导出文件名 + 文件序号\n"  
+        "文件将按顺序生成逗号分隔的多个项\n"  
+        "具体示例参照配置文件")
+
+        self.btn_runbtn = ttk.Button(
+            self.setting_frame, text="开始导出", command=self.btn_run)
+        self.btn_runbtn.place(x=700, y=60, width=120, height=30)
 
     # --------- 行为逻辑 ---------
 
@@ -335,7 +366,7 @@ class FilesTab(ttk.Frame):
             return None
         return None
 
-    def get_output_text_name(self):
+    def get_export_index(self):
         '''
         获取导出名称，返回 text, start_index
 
@@ -366,6 +397,55 @@ class FilesTab(ttk.Frame):
                 "导出名称中 [文本] 为空 或 [起始序号] 错误，使用原名称\n""导出名称格式应为 [文本@起始序号] 或 [文本]", "WARN")
             return raw_text, 1
         return text, start_index
+
+    def get_export_name(self, len_files, process_index):
+        '''
+        获取导出名称
+
+        :len_files:     导出文件总数
+        :process_index: 导出的第 i 个文件   从 0 开始
+        '''
+        preset_index = int(self.var_preset.get()[:2]) - 1
+        # print(preset_index, self.var_preset.get())
+        
+        use_preset = self.preset_value[preset_index].split(",")
+
+        current_preset = use_preset[process_index % len(use_preset)]
+        current_index = process_index // len(use_preset)
+
+        text_save_name, start_index = self.get_export_index()
+        if not text_save_name:
+            return ""
+        width = max(2, len(str(len_files + start_index - 1)))
+
+        text_save_name = text_save_name + \
+            str(current_index + start_index).zfill(width)
+        rst = current_preset.replace("*",text_save_name)
+
+        print(rst)
+        return rst
+
+    # --------- 导出图像 ---------
+    def is_valid_pil_image(self, img: Image.Image):
+
+        if img is None:
+            return False
+
+        if not isinstance(img, Image.Image):
+            return False
+
+        w, h = img.size
+        if w <= 0 or h <= 0:
+            return False
+
+        if img.getbbox() is None:
+            return False
+
+        # WWSB=yes
+        # 斜坡13号地形是空的
+
+        WWSB = True
+        return WWSB
 
     def btn_choose_folder(self):
         floder = filedialog.askdirectory(title="选择导出文件夹")
@@ -603,8 +683,8 @@ class FilesTab(ttk.Frame):
         config = configparser.ConfigParser()
         config.optionxform = str
 
-        if Path(CONFIG_PATH).is_file():
-            config.read(CONFIG_PATH, encoding="utf-8")
+        if Path(SETTING_PATH).is_file():
+            config.read(SETTING_PATH, encoding="utf-8")
 
             self.path_pal_source = str(Path(self.ent_pal_source.get()))
             self.path_pal_target = str(Path(self.ent_pal_target.get()))
@@ -643,7 +723,7 @@ class FilesTab(ttk.Frame):
             SET_PAL_TARGET: self.var_auto_pal_target.get()
         }
 
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        with open(SETTING_PATH, "w", encoding="utf-8") as f:
             config.write(f)
 
     def isfile(self, some_path):
@@ -655,12 +735,12 @@ class FilesTab(ttk.Frame):
 
         # 读取 config
 
-        if not Path(CONFIG_PATH).exists():
+        if not Path(SETTING_PATH).exists():
             self.save_config()
             return
 
         config = configparser.ConfigParser()
-        config.read(CONFIG_PATH, encoding="utf-8")
+        config.read(SETTING_PATH, encoding="utf-8")
 
         # 气候列表
         t_basic = config.get(SECTION_SETTING, SET_THEATER,
@@ -730,3 +810,57 @@ class FilesTab(ttk.Frame):
             SECTION_PATH, DIR_TEMPLATE, fallback=""))
         self.ent_template.delete(0, tk.END)
         self.ent_template.insert(0, self.path_template)
+
+    def generate_preset(self):
+
+        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        config = configparser.ConfigParser()
+        config.optionxform = str
+
+        if Path(PRESET_PATH).is_file():
+            config.read(PRESET_PATH, encoding="utf-8")
+
+            self.path_pal_source = str(Path(self.ent_pal_source.get()))
+            self.path_pal_target = str(Path(self.ent_pal_target.get()))
+            self.path_out_floder = str(Path(self.ent_out_floder.get()))
+            self.path_template = str(Path(self.ent_template.get()))
+
+        if not config.has_section(SECTION_LIST):
+            config.add_section(SECTION_LIST)
+        config[SECTION_EXP_NAME] = {
+            "0": "*,*a-*g...",
+            "1": "*,*a...",
+            "2": "*01-*99",
+            "3": "*01a-*99a"
+        }
+        config[SECTION_EXP_PRESET] = {
+            "0": "*",
+            "1": "*,*a,*b,*c,*d,*e,*f,*g",
+            "2": "*,*a",
+            "3": "*a",
+            "4": "*,*b",
+            "5": "*b"
+        }
+
+        with open(PRESET_PATH, "w", encoding="utf-8") as f:
+            config.write(f)
+
+    def load_preset(self):
+
+        if not Path(PRESET_PATH).exists():
+            self.generate_preset()
+
+        config = configparser.ConfigParser()
+        config.read(PRESET_PATH, encoding="utf-8")
+
+        self.preset_name = [str(int(k)+1).zfill(2)+" - "+v for
+                            k, v in config[SECTION_EXP_NAME].items()]
+
+        self.preset_value = [v for
+                            k, v in config[SECTION_EXP_PRESET].items()]
+
+        # # 2) 刷新色盘列表
+        # self.path_template = self.isfile(config.get(
+        #     SECTION_PATH, DIR_TEMPLATE, fallback=""))
+        # self.ent_template.delete(0, tk.END)
+        # self.ent_template.insert(0, self.path_template)

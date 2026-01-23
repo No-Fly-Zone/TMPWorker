@@ -9,7 +9,7 @@ from tkinter import ttk, filedialog, messagebox
 
 from pathlib import Path
 import sys
-
+from datetime import datetime
 
 from gui.Page1 import Tab_One
 from gui.Page2 import Tab_Two
@@ -89,34 +89,44 @@ class App(tk.Tk):
         log_frame = ttk.Frame(self)
         log_frame.place(x=10, y=680, width=900, height=184)
 
-        ttk.Label(log_frame, text="Log:", relief="flat").place(x=10, y=0, width=80,  height=20)
+        ttk.Label(log_frame, text="Log:", relief="flat").place(
+            x=10, y=0, width=80,  height=20)
 
         self.txt_log = tk.Text(log_frame, height=6, font=10,
                                state=tk.DISABLED, wrap=tk.WORD)
         self.txt_log.place(x=5, y=24, width=850,  height=150)
+
         self.txt_log.tag_config(
             "INFO", foreground="#858585", font=("SimSun", 10))
         self.txt_log.tag_config(
-            "WARN", foreground="orange", font=("SimSun", 10))
-        self.txt_log.tag_config("ERROR", foreground="red",
-                                font=("SimSun", 10))
+            "WARN", foreground="#FFAA00", font=("SimSun", 10))
+        self.txt_log.tag_config(
+            "ERROR", foreground="#FF0000", font=("SimSun", 10))
         self.txt_log.tag_config(
             "SUCCESS", foreground="#36BB53", font=("SimSun", 10))
         self.txt_log.tag_config(
             "PASS", foreground="#858585", font=("SimSun", 6))
-        
+        self.txt_log.tag_config(
+            "TIME", foreground="#999999", font=("SimSun", 10))
+
         sb2 = ttk.Scrollbar(log_frame, orient=tk.VERTICAL,
-                           command=self.txt_log.yview)
-                           
+                            command=self.txt_log.yview)
+
         sb2.place(x=855, y=24, height=150)
         self.txt_log.config(yscrollcommand=sb2.set)
 
     def append_log(self, msg, level="INFO"):
         self.txt_log.config(state=tk.NORMAL)
         if level != "PASS":
-            self.txt_log.insert(tk.END, "[" + level + "]" + msg + "\n", level)
+            # ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[2:-3]
+
+            self.txt_log.insert(tk.END, f"[{ts}] ", "TIME")
+            self.txt_log.insert(tk.END, f"[{level}] ", level)
+            self.txt_log.insert(tk.END, msg + "\n", level)
         else:
             self.txt_log.insert(tk.END, "\n", level)
+
         self.txt_log.see(tk.END)
         self.txt_log.config(state=tk.DISABLED)
         self.txt_log.update_idletasks()
