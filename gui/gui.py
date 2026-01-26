@@ -70,6 +70,119 @@ SET_THEATER = "Theater"
 # ---------------- 提示框 ----------------
 
 
+class AdvancedSortableTreeview(ttk.Treeview):
+    def __init__(self, master=None, **kwargs):
+        super().__init__(master, **kwargs)
+
+        # 绑定事件
+        self.bind('<ButtonPress-1>', self.on_press)
+        self.bind('<B1-Motion>', self.on_drag)
+        self.bind('<ButtonRelease-1>', self.on_release)
+
+        # 拖拽相关变量
+        self.drag_data = {
+            'x': 0, 'y': 0,
+            'item': None,
+            'values': None,
+            'text': None
+        }
+        self.drag_window = None
+
+    def on_press(self, event):
+        """鼠标按下时记录拖拽开始"""
+        item = self.identify_row(event.y)
+        if item:
+            self.drag_data['item'] = item
+            self.drag_data['x'] = event.x
+            self.drag_data['y'] = event.y
+            self.drag_data['values'] = self.item(item, 'values')
+            self.drag_data['text'] = self.item(item, 'text')
+
+    def on_drag(self, event):
+        """拖拽过程中显示预览窗口"""
+        if not self.drag_data['item']:
+            return
+
+        # 创建拖拽预览窗口
+        if not self.drag_window:
+            self.drag_window = tk.Toplevel(self)
+            self.drag_window.overrideredirect(True)
+            self.drag_window.attributes('-alpha', 0.7)
+
+            # 创建预览内容
+            frame = tk.Frame(self.drag_window, bg='lightblue', relief='solid')
+            frame.pack(fill=tk.BOTH, expand=True)
+
+            # 显示项目内容
+            text = self.drag_data['text']
+            values = self.drag_data['values']
+
+            tk.Label(frame, text=text, bg='lightblue',
+                     font=('Arial', 10, 'bold')).pack(pady=2, padx=10)
+
+            if values:
+                for value in values:
+                    tk.Label(frame, text=value, bg='lightblue').pack(
+                        pady=1, padx=10)
+
+        # 移动预览窗口
+        self.drag_window.geometry(f'+{event.x_root}+{event.y_root}')
+
+        # 显示插入位置指示线
+        self.show_insert_position(event.y)
+
+    def show_insert_position(self, y):
+        """显示插入位置指示线"""
+        # 移除旧的指示线
+        for item in self.get_children():
+            tags = self.item(item, 'tags')
+            if tags and 'insert_pos' in tags:
+                self.item(item, tags=())
+
+        # 找到目标位置
+        target_item = self.identify_row(y)
+        if target_item:
+            # 高亮显示目标位置
+            self.item(target_item, tags=('insert_pos',))
+            self.tag_configure('insert_pos', background='lightyellow')
+
+    def on_release(self, event):
+        """释放鼠标时执行排序"""
+        if self.drag_data['item']:
+            target_item = self.identify_row(event.y)
+            source_item = self.drag_data['item']
+
+            if target_item and source_item != target_item:
+                # 获取所有项目
+                all_items = list(self.get_children())
+
+                # 移除源项目
+                all_items.remove(source_item)
+
+                # 找到目标位置并插入
+                target_index = all_items.index(target_item)
+                all_items.insert(target_index, source_item)
+
+                # 重新排序
+                for i, item in enumerate(all_items):
+                    self.move(item, '', i)
+
+            # 清理
+            self.drag_data = {'x': 0, 'y': 0,
+                              'item': None, 'values': None, 'text': None}
+
+            # 移除预览窗口
+            if self.drag_window:
+                self.drag_window.destroy()
+                self.drag_window = None
+
+            # 移除指示线
+            for item in self.get_children():
+                tags = self.item(item, 'tags')
+                if tags and 'insert_pos' in tags:
+                    self.item(item, tags=())
+
+
 class ToolTip:
     def __init__(self, widget, text):
         self.widget = widget
@@ -114,7 +227,7 @@ class FilesTab(ttk.Frame):
         super().__init__(master)
         self.log_callback = log_callback
 
-        self.full_paths = []
+        self.item_to_path = {}
         self.lst_files = []
         self.path_out_floder = ""
         self.path_pal_source = ""
@@ -148,16 +261,34 @@ class FilesTab(ttk.Frame):
         self.file_frame = ttk.Labelframe(self, text="文件列表")
         self.file_frame.place(x=10, y=10, width=880, height=365)
 
-        self.lb_files = tk.Listbox(
-            self.file_frame, selectmode=tk.EXTENDED, relief="flat", takefocus=False)
-        # self.lb_files.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.lb_files.place(x=10, y=10, width=210, height=292)
+        self.tree = AdvancedSortableTreeview(
+            self.file_frame,
+            columns=("file", "preview"),
+            show="headings"
+        )
 
-        sb = ttk.Scrollbar(self.file_frame, orient=tk.VERTICAL,
-                           command=self.lb_files.yview)
-        # sb.pack(side=tk.RIGHT, fill=tk.Y)
-        sb.place(x=220, y=10, height=292)
-        self.lb_files.config(yscrollcommand=sb.set)
+        self.tree.heading("file", text="文件")
+        self.tree.heading("preview", text="导出名称预览")
+
+        self.tree.column("file", width=100, anchor="w", stretch=False)
+        self.tree.column("preview", width=100, anchor="w", stretch=False)
+
+        def disable_column_resize(event):
+            if self.tree.identify_region(event.x, event.y) == "separator":
+                return "break"
+        self.tree.bind("<Button-1>", disable_column_resize, add="+")
+
+        # 纵向滚动条
+        sb = ttk.Scrollbar(
+            self.file_frame,
+            orient=tk.VERTICAL,
+            command=self.tree.yview
+        )
+
+        self.tree.configure(yscrollcommand=sb.set)
+
+        self.tree.place(x=10, y=10, width=200, height=292)
+        sb.place(x=210, y=10, height=292)
 
         # 按钮
         ttk.Button(self.file_frame, text="添加",
@@ -173,7 +304,7 @@ class FilesTab(ttk.Frame):
         self.image_label.place(
             x=246, y=8, width=self.image_label_width, height=self.image_label_height)
 
-        self.lb_files.bind("<<ListboxSelect>>", self.file_on_select)
+        self.tree.bind("<<TreeviewSelect>>", self.file_on_select)
         self.show_preview(Image.new("RGB", (10, 10), (255, 255, 255)))
 
         # ttk.Button(self.file_frame, text="导出",
@@ -514,22 +645,29 @@ class FilesTab(ttk.Frame):
     def btn_add_files(self):
         files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
             ("TMP files", self.tmp_suffix)])
+
+        existing_paths = set(self.item_to_path.values())
         for f in files:
-            if f not in self.full_paths:
-                self.full_paths.append(f)
-                self.lb_files.insert(tk.END, Path(f).name)
+            if f in existing_paths:
+                continue
+            preview_name = "notaval"
+            item_id = self.tree.insert(
+                "", "end", values=(Path(f).name, preview_name))
+            self.item_to_path[item_id] = f
+
         self.save_config()
 
     def btn_remove_selected(self):
-        for index in reversed(self.lb_files.curselection()):
-            self.lb_files.delete(index)
-            del self.full_paths[index]
+        for item_id in self.tree.selection():
+            self.tree.delete(item_id)
+            del self.item_to_path[item_id]
         self.save_config()
 
     def btn_remove_all(self):
         if messagebox.askyesno("标题", "是否全部移除"):
-            self.lb_files.delete(0, tk.END)
-            self.full_paths.clear()
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+            self.item_to_path.clear()
             self.save_config()
 
     def btn_run(self):
@@ -538,23 +676,24 @@ class FilesTab(ttk.Frame):
     # --------- 图片预览 ---------
 
     def file_on_select(self, event):
-        if not self.lb_files.curselection():
+
+        selected = self.tree.selection()
+        if not selected:
             return
+
+        item_id = selected[0]
+        file = self.item_to_path[item_id]
 
         if self.lb_show_type == "PAGE_1" or self.lb_show_type == "PAGE_3":
             self.path_pal_source = self.ent_pal_source.get()
 
             if not Path(self.path_pal_source).is_file():
                 return
-            index = self.lb_files.curselection()[0]
-            file = self.full_paths[index]
 
             render_img, palette = self.render_preview(file)
             self.show_preview(render_img, palette)
 
         elif self.lb_show_type == "PAGE_2" or self.lb_show_type == "PAGE_4":
-            index = self.lb_files.curselection()[0]
-            file = self.full_paths[index]
 
             render_img = Image.open(file).convert(
                 "RGBA")  # self.render_preview(file)
@@ -662,23 +801,10 @@ class FilesTab(ttk.Frame):
             widget.delete("1.0", "end")
             widget.insert("1.0", content[:MAX_LEN])
 
-    def text_limit_len_key(self, event):
-        # # 限制长度
-        # MAX_LEN = 15
-
-        # if event.keysym in ("BackSpace", "Delete", "Left", "Right", "Up", "Down"):
-        #     return
-        # widget = event.widget
-
-        # content = widget.get("1.0", "end-1c")
-        # if len(content) >= MAX_LEN:
-        #     return "break"
-        pass
-
     # --------- 配置读写 ---------
 
     def save_config(self):
-
+        # return
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         config = configparser.ConfigParser()
         config.optionxform = str
@@ -694,21 +820,23 @@ class FilesTab(ttk.Frame):
         if not config.has_section(SECTION_LIST):
             config.add_section(SECTION_LIST)
 
+        saved_list_str = '\n'.join(
+            str(self.item_to_path[item_id]) for item_id in list(self.tree.get_children()))
         if self.lb_show_type == "PAGE_1":
             config.set(SECTION_LIST, DIR_TMP,
-                       "\n".join(self.full_paths))
+                       saved_list_str)
 
         if self.lb_show_type == "PAGE_2":
             config.set(SECTION_LIST, DIR_IMAGE,
-                       "\n".join(self.full_paths))
+                       saved_list_str)
 
         if self.lb_show_type == "PAGE_3":
             config.set(SECTION_LIST, DIR_TMP_CONVERT,
-                       "\n".join(self.full_paths))
+                       saved_list_str)
 
         if self.lb_show_type == "PAGE_4":
             config.set(SECTION_LIST, DIR_ZDATA,
-                       "\n".join(self.full_paths))
+                       saved_list_str)
 
         config[SECTION_PATH] = {
             DIR_PAL_SOURCE: self.path_pal_source,
@@ -732,7 +860,7 @@ class FilesTab(ttk.Frame):
         return ""
 
     def load_config(self):
-
+        # return
         # 读取 config
 
         if not Path(SETTING_PATH).exists():
@@ -778,12 +906,22 @@ class FilesTab(ttk.Frame):
         raw = config.get(SECTION_LIST, list_name, fallback="")
         self.lst_files = [i for i in raw.splitlines(
         ) if i.strip() and Path(i).is_file()]
-        self.lb_files.delete(0, tk.END)
-        self.full_paths.clear()
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        self.item_to_path.clear()
+        # for f in self.lst_files:
+        #     if f not in self.item_to_path:
+        #         self.item_to_path.append(f)
+        #         self.tree.insert(tk.END, Path(f).name)
+        existing_paths = set(self.item_to_path.values())
         for f in self.lst_files:
-            if f not in self.full_paths:
-                self.full_paths.append(f)
-                self.lb_files.insert(tk.END, Path(f).name)
+            if f in existing_paths:
+                continue
+            # preview_name = self.generate_preview_name(f)
+            preview_name = "notaval"
+            item_id = self.tree.insert(
+                "", "end", values=(Path(f).name, preview_name))
+            self.item_to_path[item_id] = f
 
         # 刷新路径列表
         # 1) 刷新文件夹列表

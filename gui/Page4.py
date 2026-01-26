@@ -114,9 +114,9 @@ class Tab_Four(FilesTab):
             ("BMP", "*.bmp")
         ])
         for f in files:
-            if f not in self.full_paths:
-                self.full_paths.append(f)
-                self.lb_files.insert(tk.END, Path(f).name)
+            if f not in self.item_to_path:
+                self.item_to_path.append(f)
+                self.tree.insert(tk.END, Path(f).name)
         self.save_config()
 
     # --------- 导出图像 ---------
@@ -201,7 +201,7 @@ class Tab_Four(FilesTab):
         self.path_pal_source = self.ent_pal_source.get()
         self.path_out_floder = self.ent_out_floder.get()
         self.path_template = self.ent_template.get()
-        self.lst_files = self.full_paths.copy()
+        self.lst_files = self.item_to_path.copy()
 
         if not Path(self.path_pal_source).is_file():
             messagebox.showwarning("警告", "未选择色盘")
@@ -212,7 +212,7 @@ class Tab_Four(FilesTab):
 
         render_files = [
             str(Path(p))
-            for p in self.full_paths
+            for p in self.item_to_path
             if Path(p).is_file()
             and Path(p).name.startswith(prefix)
             and Path(p).name.endswith(suffix)

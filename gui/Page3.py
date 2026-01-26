@@ -61,10 +61,16 @@ class Tab_Three(FilesTab):
     def btn_add_files(self):
         files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
             ("TMP files", self.tmp_suffix)])
+
+        existing_paths = set(self.item_to_path.values())
         for f in files:
-            if f not in self.full_paths:
-                self.full_paths.append(f)
-                self.lb_files.insert(tk.END, Path(f).name)
+            if f in existing_paths:
+                continue
+            preview_name = "notaval"
+            item_id = self.tree.insert(
+                "", "end", values=(Path(f).name, preview_name))
+            self.item_to_path[item_id] = f
+
         self.save_config()
 
     # --------- 导出图像 ---------
@@ -131,13 +137,14 @@ class Tab_Three(FilesTab):
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
 
-        render_files = [
-            str(Path(p))
-            for p in self.full_paths
-            if Path(p).is_file()
-            and Path(p).name.startswith(prefix)
-            and Path(p).name.endswith(suffix)
-        ]
+
+        render_files = []
+        for item_id in self.tree.get_children():
+            k = self.item_to_path[item_id]
+            if k.startswith(prefix) and k.endswith(suffix):
+                p = Path(k)
+                if p.is_file():
+                    render_files.append(p)
 
         if not render_files:
             messagebox.showwarning("Warning", "Not file choosed")

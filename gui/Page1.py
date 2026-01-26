@@ -94,13 +94,14 @@ class Tab_One(FilesTab):
             return
 
         # ========= 导出文件 =========
-        render_files = [
-            Path(p)
-            for p in self.full_paths
-            if Path(p).is_file()
-            and p.startswith(prefix)
-            and p.endswith(suffix)
-        ]
+        
+        render_files = []
+        for item_id in self.tree.get_children():
+            k = self.item_to_path[item_id]
+            if k.startswith(prefix) and k.endswith(suffix):
+                p = Path(k)
+                if p.is_file():
+                    render_files.append(p)
 
         if not render_files:
             messagebox.showwarning("警告", "未选择需要导出的 TMP 文件")
