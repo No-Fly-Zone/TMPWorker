@@ -55,7 +55,8 @@ class Tab_Three(FilesTab):
                 "导出文件的气候类型")
         self.cb_output_theater.place(x=500, y=30, width=115, height=24)
         self.cb_output_theater.current(0)
-
+        self.cb_output_theater.bind("<<ComboboxSelected>>", self.refresh_export_preview)
+        
     # --------- 行为逻辑 ---------
 
     def refresh_export_preview(self, *args):
