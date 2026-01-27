@@ -69,6 +69,51 @@ class Tab_One(FilesTab):
         self.ckb_exp_bmp.place(x=350, y=30, width=80, height=25)
         ToolTip(self.ckb_exp_bmp, "导出为 BMP 文件")
 
+        self.var_zdata_mode.trace_add("write", self.file_on_select)
+        
+        self.var_zdata_mode.trace_add("write", self.refresh_export_preview)
+        self.var_exp_png.trace_add("write", self.refresh_export_preview)
+        self.var_exp_bmp.trace_add("write", self.refresh_export_preview)
+
+    def refresh_export_preview(self, *args):
+        
+        render_files = []
+    
+        prefix = self.ent_prefix.get().split("\n")[0].strip()
+        suffix = self.ent_suffix.get().split("\n")[0].strip()
+
+        for item_id in self.tree.get_children():
+            k = self.item_to_path[item_id]
+            if k.startswith(prefix) and k.endswith(suffix):
+                p = Path(k)
+                if p.is_file():
+                    render_files.append((item_id, p))
+
+        bmp = self.var_exp_bmp.get() == "enable"
+        png = self.var_exp_png.get() == "enable"
+        if not bmp and not png:
+            for idx, (item_id, _) in enumerate(render_files):
+                self.tree.set(item_id, "preview", "无")
+            return
+
+        export_suffix = "_z" if self.var_zdata_mode.get() != "disable" else ""
+        if bmp and png:
+            suffix = ".bmp/png"
+        elif bmp:
+            suffix = ".bmp"
+        elif png:
+            suffix = ".png"
+        else:
+            suffix = ""
+        export_suffix += suffix
+
+        total = len(render_files)
+        for idx, (item_id, _) in enumerate(render_files):
+            export_name = self.get_export_name(total, idx, render_files) + export_suffix
+            self.tree.set(item_id, "preview", export_name)
+        
+        
+
     def btn_run(self):
         self.safe_call(self.btn_run_safe)
 
@@ -115,7 +160,7 @@ class Tab_One(FilesTab):
         failed_count = 0
 
         # ========= 主循环 =========
-        for index, img_path in enumerate(render_files, start=1):
+        for index, img_path in enumerate(render_files, 1):
 
             # 默认输出目录
             target_dir = Path(out_folder) if out_folder else img_path.parent

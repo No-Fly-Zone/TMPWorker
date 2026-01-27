@@ -87,6 +87,8 @@ class AdvancedSortableTreeview(ttk.Treeview):
             'text': None
         }
         self.drag_window = None
+        self.previous_order = []
+
 
     def on_press(self, event):
         """鼠标按下时记录拖拽开始"""
@@ -97,6 +99,8 @@ class AdvancedSortableTreeview(ttk.Treeview):
             self.drag_data['y'] = event.y
             self.drag_data['values'] = self.item(item, 'values')
             self.drag_data['text'] = self.item(item, 'text')
+            self.previous_order = list(self.get_children())
+
 
     def on_drag(self, event):
         """拖拽过程中显示预览窗口"""
@@ -182,6 +186,12 @@ class AdvancedSortableTreeview(ttk.Treeview):
                 if tags and 'insert_pos' in tags:
                     self.item(item, tags=())
 
+            # 触发自定义事件，传递新旧顺序
+            new_order = list(self.get_children())
+            if self.previous_order != new_order:
+                    self.event_generate('<<TreeviewSorted>>', 
+                                       data={'old_order': self.previous_order, 
+                                             'new_order': new_order})
 
 class ToolTip:
     def __init__(self, widget, text):
@@ -411,8 +421,9 @@ class FilesTab(ttk.Frame):
         self.lb_save_name = ttk.Label(self.setting_frame, text="导出文件名：")
         self.lb_save_name.place(x=10, y=65, width=80, height=25)
 
+        self.var_save_name = tk.StringVar()
         self.ent_save_name = tk.Entry(
-            self.setting_frame, relief="flat", insertwidth=1)
+            self.setting_frame, relief="flat",textvariable=self.var_save_name, insertwidth=1)
         self.ent_save_name.place(x=85, y=67, width=104, height=20)
 
         self.lb_preset = ttk.Label(self.setting_frame, text="导出文件命名规则：")
@@ -436,7 +447,12 @@ class FilesTab(ttk.Frame):
         self.btn_runbtn = ttk.Button(
             self.setting_frame, text="开始导出", command=self.btn_run)
         self.btn_runbtn.place(x=700, y=60, width=120, height=30)
-
+        
+        self.tree.bind('<<TreeviewSorted>>', self.refresh_export_preview)
+        self.var_save_name.trace_add("write", self.refresh_export_preview)
+        self.cb_preset.bind("<<ComboboxSelected>>", self.refresh_export_preview)
+        self.var_auto_pal_source.trace_add("write", self.file_on_select)
+        # self.check_var.trace_add("write", self.refresh_export_preview)
     # --------- 行为逻辑 ---------
 
     def log(self, msg, level="INFO"):
@@ -529,7 +545,7 @@ class FilesTab(ttk.Frame):
             return raw_text, 1
         return text, start_index
 
-    def get_export_name(self, len_files, process_index):
+    def get_export_name(self, len_files, process_index, render_files = []):
         '''
         获取导出名称
 
@@ -537,7 +553,6 @@ class FilesTab(ttk.Frame):
         :process_index: 导出的第 i 个文件   从 0 开始
         '''
         preset_index = int(self.var_preset.get()[:2]) - 1
-        # print(preset_index, self.var_preset.get())
 
         use_preset = self.preset_value[preset_index].split(",")
 
@@ -546,15 +561,37 @@ class FilesTab(ttk.Frame):
 
         text_save_name, start_index = self.get_export_index()
         if not text_save_name:
-            return ""
+            if not render_files:
+                return ""
+            p = render_files[process_index][1]
+            return Path(p).stem
         width = max(2, len(str(len_files + start_index - 1)))
 
         text_save_name = text_save_name + \
             str(current_index + start_index).zfill(width)
         rst = current_preset.replace("*", text_save_name)
 
-        print(rst)
         return rst
+    
+    def refresh_export_preview(self, *args):
+        pass
+        # render_files = []
+    
+        # prefix = self.ent_prefix.get().split("\n")[0].strip()
+        # suffix = self.ent_suffix.get().split("\n")[0].strip()
+
+        # for item_id in self.tree.get_children():
+        #     k = self.item_to_path[item_id]
+        #     if k.startswith(prefix) and k.endswith(suffix):
+        #         p = Path(k)
+        #         if p.is_file():
+        #             render_files.append((item_id, p))
+
+        # total = len(render_files)
+
+        # for idx, (item_id, _) in enumerate(render_files):
+        #     export_name = self.get_export_name(total, idx, render_files)
+        #     self.tree.set(item_id, "preview", export_name)
 
     # --------- 导出图像 ---------
     def is_valid_pil_image(self, img: Image.Image):
@@ -654,7 +691,6 @@ class FilesTab(ttk.Frame):
             item_id = self.tree.insert(
                 "", "end", values=(Path(f).name, preview_name))
             self.item_to_path[item_id] = f
-
         self.save_config()
 
     def btn_remove_selected(self):
@@ -675,7 +711,7 @@ class FilesTab(ttk.Frame):
 
     # --------- 图片预览 ---------
 
-    def file_on_select(self, event):
+    def file_on_select(self, *args):
 
         selected = self.tree.selection()
         if not selected:
@@ -853,6 +889,7 @@ class FilesTab(ttk.Frame):
 
         with open(SETTING_PATH, "w", encoding="utf-8") as f:
             config.write(f)
+        self.refresh_export_preview()
 
     def isfile(self, some_path):
         if Path(some_path).is_file():
@@ -948,6 +985,8 @@ class FilesTab(ttk.Frame):
             SECTION_PATH, DIR_TEMPLATE, fallback=""))
         self.ent_template.delete(0, tk.END)
         self.ent_template.insert(0, self.path_template)
+
+        self.refresh_export_preview()
 
     def generate_preset(self):
 

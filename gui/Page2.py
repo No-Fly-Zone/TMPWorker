@@ -83,8 +83,36 @@ class Tab_Two(FilesTab):
         self.cb_output_theater.place(x=500, y=60, width=115, height=24)
         self.cb_output_theater.current(0)
 
+        self.cb_output_theater.bind("<<ComboboxSelected>>", self.refresh_export_preview)
+
     # --------- 行为逻辑 ---------
 
+    def refresh_export_preview(self, *args):
+        
+        render_files = []
+    
+        prefix = self.ent_prefix.get().split("\n")[0].strip()
+        suffix = self.ent_suffix.get().split("\n")[0].strip()
+
+        for item_id in self.tree.get_children():
+            k = self.item_to_path[item_id]
+            if k.startswith(prefix) and k.endswith(suffix):
+                p = Path(k)
+                if p.is_file():
+                    render_files.append((item_id, p))
+
+        total = len(render_files)
+
+        if self.var_output_theater.get() == "按选中模板气候":
+            output_theater = self.path_template[-4:]
+        else:
+            output_theater = "." + self.var_output_theater.get()[3:].lower()
+
+        for idx, (item_id, _) in enumerate(render_files):
+            export_name = self.get_export_name(total, idx, render_files) + output_theater
+            self.tree.set(item_id, "preview", export_name)
+        
+        
     def btn_add_files(self):
         files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
             ("Image files", "*.png *.bmp"),
@@ -134,10 +162,10 @@ class Tab_Two(FilesTab):
 
     def _build_save_path(self, import_img, total, output_theater, process_index):
 
-        text_save_name = self.get_export_name(total, process_index)
+        export_name = self.get_export_name(total, process_index)
 
-        if text_save_name:
-            name = f"{text_save_name}{output_theater}"
+        if export_name:
+            name = f"{export_name}{output_theater}"
         else:
             name = f"{Path(import_img).stem}{output_theater}"
 
@@ -229,8 +257,8 @@ class Tab_Two(FilesTab):
 
         failed_count = 0
 
-        for i, img_path in enumerate(render_files, 1):
-            self.log(f"正在导出第{i}个文件 {img_path}")
+        for index, img_path in enumerate(render_files, 1):
+            self.log(f"正在导出第{index}个文件 {img_path}")
 
             template_tmp = self._find_template(
                 mode,
@@ -246,13 +274,13 @@ class Tab_Two(FilesTab):
 
             palette = self.get_source_pal(save_theater)
             save_path = self._build_save_path(
-                img_path, total, save_theater, i
+                img_path, total, save_theater, index
             )
 
             if self._process_one(
                 img_path, template_tmp, palette, save_path
             ):
-                self.log(f"已导出第{i}个文件 {save_path}")
+                self.log(f"已导出第{index}个文件 {save_path}")
             else:
                 failed_count += 1
 

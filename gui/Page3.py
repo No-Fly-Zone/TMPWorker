@@ -58,6 +58,29 @@ class Tab_Three(FilesTab):
 
     # --------- 行为逻辑 ---------
 
+    def refresh_export_preview(self, *args):
+        
+        render_files = []
+    
+        prefix = self.ent_prefix.get().split("\n")[0].strip()
+        suffix = self.ent_suffix.get().split("\n")[0].strip()
+
+        for item_id in self.tree.get_children():
+            k = self.item_to_path[item_id]
+            if k.startswith(prefix) and k.endswith(suffix):
+                p = Path(k)
+                if p.is_file():
+                    render_files.append((item_id, p))
+
+        total = len(render_files)
+
+        output_theater = "." + self.var_output_theater.get()[3:].lower()
+
+        for idx, (item_id, _) in enumerate(render_files):
+            export_name = self.get_export_name(total, idx, render_files) + output_theater
+            self.tree.set(item_id, "preview", export_name)
+        
+        
     def btn_add_files(self):
         files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
             ("TMP files", self.tmp_suffix)])
@@ -77,10 +100,10 @@ class Tab_Three(FilesTab):
 
     def _build_save_path(self, import_img, total, output_theater, process_index):
 
-        text_save_name = self.get_export_name(total, process_index)
+        export_name = self.get_export_name(total, process_index)
 
-        if text_save_name:
-            name = f"{text_save_name}{output_theater}"
+        if export_name:
+            name = f"{export_name}{output_theater}"
         else:
             name = f"{Path(import_img).stem}{output_theater}"
 
@@ -159,8 +182,8 @@ class Tab_Three(FilesTab):
 
         failed_count = 0
 
-        for i, tmp_path in enumerate(render_files, 1):
-            self.log(f"正在导出第{i}个文件 {tmp_path}")
+        for index, tmp_path in enumerate(render_files, 1):
+            self.log(f"正在导出第{index}个文件 {tmp_path}")
 
             tmp = TmpFile(tmp_path)
             pal_source = self.get_source_pal(tmp_path)
@@ -169,20 +192,20 @@ class Tab_Three(FilesTab):
                 tmp, pal_source, output_img="",
                 render_extra=True, out_bmp=False, out_png=False)
             if re_image == None:
-                self.log(f"第{i+1}个文件 {tmp_path}导出失败", "WARN")
+                self.log(f"第{index}个文件 {tmp_path}导出失败", "WARN")
                 failed_count += 1
                 continue
 
             pal_target = self.get_target_pal(output_theater)
 
             save_path = self._build_save_path(
-                tmp_path, total, output_theater, i
+                tmp_path, total, output_theater, index
             )
 
             if self._process_one(
                 re_image, tmp_path, pal_target, save_path
             ):
-                self.log(f"已导出第{i}个文件 {save_path}")
+                self.log(f"已导出第{index}个文件 {save_path}")
             else:
                 failed_count += 1
 
