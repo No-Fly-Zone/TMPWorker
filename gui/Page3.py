@@ -187,7 +187,7 @@ class Tab_Three(FilesTab):
             self.log(f"正在导出第{index}个文件 {tmp_path}")
 
             tmp = TmpFile(tmp_path)
-            pal_source = self.get_source_pal(tmp_path)
+            pal_source = self.get_source_pal(str(tmp_path))
 
             re_image = render.render_full_png(
                 tmp, pal_source, output_img="",
