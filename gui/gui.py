@@ -89,7 +89,6 @@ class AdvancedSortableTreeview(ttk.Treeview):
         self.drag_window = None
         self.previous_order = []
 
-
     def on_press(self, event):
         """鼠标按下时记录拖拽开始"""
         item = self.identify_row(event.y)
@@ -100,7 +99,6 @@ class AdvancedSortableTreeview(ttk.Treeview):
             self.drag_data['values'] = self.item(item, 'values')
             self.drag_data['text'] = self.item(item, 'text')
             self.previous_order = list(self.get_children())
-
 
     def on_drag(self, event):
         """拖拽过程中显示预览窗口"""
@@ -189,9 +187,10 @@ class AdvancedSortableTreeview(ttk.Treeview):
             # 触发自定义事件，传递新旧顺序
             new_order = list(self.get_children())
             if self.previous_order != new_order:
-                    self.event_generate('<<TreeviewSorted>>', 
-                                       data={'old_order': self.previous_order, 
-                                             'new_order': new_order})
+                self.event_generate('<<TreeviewSorted>>',
+                                    data={'old_order': self.previous_order,
+                                          'new_order': new_order})
+
 
 class ToolTip:
     def __init__(self, widget, text):
@@ -423,11 +422,11 @@ class FilesTab(ttk.Frame):
 
         self.var_save_name = tk.StringVar()
         self.ent_save_name = tk.Entry(
-            self.setting_frame, relief="flat",textvariable=self.var_save_name, insertwidth=1)
+            self.setting_frame, relief="flat", textvariable=self.var_save_name, insertwidth=1)
         self.ent_save_name.place(x=85, y=67, width=104, height=20)
 
         self.lb_preset = ttk.Label(self.setting_frame, text="导出文件命名规则：")
-        self.lb_preset.place(x=220, y=67, width=120, height=25)
+        self.lb_preset.place(x=220, y=65, width=120, height=25)
 
         self.var_preset = tk.StringVar()
 
@@ -446,11 +445,12 @@ class FilesTab(ttk.Frame):
 
         self.btn_runbtn = ttk.Button(
             self.setting_frame, text="开始导出", command=self.btn_run)
-        self.btn_runbtn.place(x=700, y=60, width=120, height=30)
-        
+        self.btn_runbtn.place(x=725, y=60, width=120, height=30)
+
         self.tree.bind('<<TreeviewSorted>>', self.refresh_export_preview)
         self.var_save_name.trace_add("write", self.refresh_export_preview)
-        self.cb_preset.bind("<<ComboboxSelected>>", self.refresh_export_preview)
+        self.cb_preset.bind("<<ComboboxSelected>>",
+                            self.refresh_export_preview)
         self.var_auto_pal_source.trace_add("write", self.file_on_select)
         # self.check_var.trace_add("write", self.refresh_export_preview)
     # --------- 行为逻辑 ---------
@@ -545,7 +545,7 @@ class FilesTab(ttk.Frame):
             return raw_text, 1
         return text, start_index
 
-    def get_export_name(self, len_files, process_index, render_files = []):
+    def get_export_name(self, len_files, process_index, render_files=[]):
         '''
         获取导出名称
 
@@ -572,11 +572,11 @@ class FilesTab(ttk.Frame):
         rst = current_preset.replace("*", text_save_name)
 
         return rst
-    
+
     def refresh_export_preview(self, *args):
         pass
         # render_files = []
-    
+
         # prefix = self.ent_prefix.get().split("\n")[0].strip()
         # suffix = self.ent_suffix.get().split("\n")[0].strip()
 
@@ -991,38 +991,10 @@ class FilesTab(ttk.Frame):
     def generate_preset(self):
 
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        config = configparser.ConfigParser()
-        config.optionxform = str
 
-        if Path(PRESET_PATH).is_file():
-            config.read(PRESET_PATH, encoding="utf-8")
+        str_presets = "\n[Names]\n0=*\n1=*,*a-*g\n2=*,*a\n3=*a\n4=*,*b\n5=*b\n\n[Presets]\n0=*\n1=*,*a,*b,*c,*d,*e,*f,*g\n2=*,*a\n3=*a\n4=*,*b\n5=*b\n\n; 将根据预设进行循环导出，例如：\n\n;   输入为：    exm   共有 8 个文件\n;   使用预设：  *,*a\n;   则文件依次命名为:\n;      exm01    exm01a   exm02    exm02a    ... exm04    exm04a\n\n;   输入为：    exm@3   共有6个文件\n;   使用预设：  *,*a\n;   则文件依次命名为:\n;      exm03    exm03a   exm04    exm04a   \n\n;   输入为：    exm   共有 20 个文件\n;   使用预设：  *,*a\n;   则文件依次命名为:\n;      exm01    exm01a   exm02    exm02a    ... exm10    exm10a\n\n;   输入为：    exm@9   共有20个文件\n;   使用预设：  *a\n;   则文件依次命名为:\n;      exm09    exm09a   exm10    exm10a    ... exm18   exm18a\n"
 
-            self.path_pal_source = str(Path(self.ent_pal_source.get()))
-            self.path_pal_target = str(Path(self.ent_pal_target.get()))
-            self.path_out_floder = str(Path(self.ent_out_floder.get()))
-            self.path_template = str(Path(self.ent_template.get()))
-
-        if not config.has_section(SECTION_LIST):
-            config.add_section(SECTION_LIST)
-        config[SECTION_EXP_NAME] = {
-            "0": "*",
-            "1": "*,*a-*g",
-            "2": "*,*a",
-            "3": "*a",
-            "4": "*,*b",
-            "5": "*b"
-        }
-        config[SECTION_EXP_PRESET] = {
-            "0": "*",
-            "1": "*,*a,*b,*c,*d,*e,*f,*g",
-            "2": "*,*a",
-            "3": "*a",
-            "4": "*,*b",
-            "5": "*b"
-        }
-
-        with open(PRESET_PATH, "w", encoding="utf-8") as f:
-            config.write(f)
+        PRESET_PATH.write_text(str_presets, encoding="utf-8")
 
     def load_preset(self):
 

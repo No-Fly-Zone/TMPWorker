@@ -64,14 +64,17 @@ class Tab_Two(FilesTab):
                 "模板文件夹匹配：在 [当前选中模板所在文件夹] 中选择图像同名文件\n"
                 "匹配时默认 自动选择色盘 转换对应气候")
 
-        ttk.Label(self.setting_frame, text="导出模式：").place(
-            x=500, y=0, width=60, height=20)
-        self.cb_specify_template.place(x=500, y=25, width=115, height=24)
+        ttk.Label(self.setting_frame, text="地形使用模板：").place(
+            x=500, y=20, width=85, height=20)
+        self.cb_specify_template.place(x=588, y=20, width=115, height=24)
         self.cb_specify_template.current(0)
 
         self.var_output_theater = tk.StringVar()
         self.output_theater_values = ["按选中模板气候"]
         self.output_theater_values += ["转换为"+i[1:] for i in self.theaters]
+
+        ttk.Label(self.setting_frame, text="导出文件气候：").place(
+            x=500, y=65, width=85, height=20)
 
         self.cb_output_theater = ttk.Combobox(
             self.setting_frame,
@@ -80,17 +83,18 @@ class Tab_Two(FilesTab):
             state="readonly")
         ToolTip(self.cb_output_theater,
                 "导出文件的气候类型")
-        self.cb_output_theater.place(x=500, y=60, width=115, height=24)
+        self.cb_output_theater.place(x=588, y=65, width=115, height=23)
         self.cb_output_theater.current(0)
 
-        self.cb_output_theater.bind("<<ComboboxSelected>>", self.refresh_export_preview)
+        self.cb_output_theater.bind(
+            "<<ComboboxSelected>>", self.refresh_export_preview)
 
     # --------- 行为逻辑 ---------
 
     def refresh_export_preview(self, *args):
-        
+
         render_files = []
-    
+
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
 
@@ -109,10 +113,10 @@ class Tab_Two(FilesTab):
             output_theater = "." + self.var_output_theater.get()[3:].lower()
 
         for idx, (item_id, _) in enumerate(render_files):
-            export_name = self.get_export_name(total, idx, render_files) + output_theater
+            export_name = self.get_export_name(
+                total, idx, render_files) + output_theater
             self.tree.set(item_id, "preview", export_name)
-        
-        
+
     def btn_add_files(self):
         files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
             ("Image files", "*.png *.bmp"),
@@ -220,7 +224,6 @@ class Tab_Two(FilesTab):
 
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
-
 
         render_files = []
         for item_id in self.tree.get_children():

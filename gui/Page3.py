@@ -28,7 +28,7 @@ class Tab_Three(FilesTab):
         self.btn_pal_target.config(text="选择新色盘")
 
         self.ckb_auto_pal_source.config(text="自动选择色盘 - 原地形")
-        self.ckb_auto_pal_source.place(x=10, y=20, width=160, height=25)
+        self.ckb_auto_pal_source.place(width=160)
 
         ToolTip(self.ckb_auto_pal_source,
                 "根据 原 TMP 文件后缀 在 [原色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
@@ -40,8 +40,8 @@ class Tab_Three(FilesTab):
 
         # 导出设置
 
-        ttk.Label(self.setting_frame, text="导出模式：").place(
-            x=500, y=0, width=60, height=20)
+        ttk.Label(self.setting_frame, text="导出文件气候：").place(
+            x=500, y=65, width=85, height=20)
 
         self.var_output_theater = tk.StringVar()
         self.output_theater_values = ["转换为"+i[1:] for i in self.theaters]
@@ -53,16 +53,17 @@ class Tab_Three(FilesTab):
             state="readonly")
         ToolTip(self.cb_output_theater,
                 "导出文件的气候类型")
-        self.cb_output_theater.place(x=500, y=30, width=115, height=24)
+        self.cb_output_theater.place(x=588, y=65, width=115, height=23)
         self.cb_output_theater.current(0)
-        self.cb_output_theater.bind("<<ComboboxSelected>>", self.refresh_export_preview)
-        
+        self.cb_output_theater.bind(
+            "<<ComboboxSelected>>", self.refresh_export_preview)
+
     # --------- 行为逻辑 ---------
 
     def refresh_export_preview(self, *args):
-        
+
         render_files = []
-    
+
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
 
@@ -78,10 +79,10 @@ class Tab_Three(FilesTab):
         output_theater = "." + self.var_output_theater.get()[3:].lower()
 
         for idx, (item_id, _) in enumerate(render_files):
-            export_name = self.get_export_name(total, idx, render_files) + output_theater
+            export_name = self.get_export_name(
+                total, idx, render_files) + output_theater
             self.tree.set(item_id, "preview", export_name)
-        
-        
+
     def btn_add_files(self):
         files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
             ("TMP files", self.tmp_suffix)])
@@ -160,7 +161,6 @@ class Tab_Three(FilesTab):
 
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
-
 
         render_files = []
         for item_id in self.tree.get_children():

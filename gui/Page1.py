@@ -70,15 +70,15 @@ class Tab_One(FilesTab):
         ToolTip(self.ckb_exp_bmp, "导出为 BMP 文件")
 
         self.var_zdata_mode.trace_add("write", self.file_on_select)
-        
+
         self.var_zdata_mode.trace_add("write", self.refresh_export_preview)
         self.var_exp_png.trace_add("write", self.refresh_export_preview)
         self.var_exp_bmp.trace_add("write", self.refresh_export_preview)
 
     def refresh_export_preview(self, *args):
-        
+
         render_files = []
-    
+
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
 
@@ -109,10 +109,9 @@ class Tab_One(FilesTab):
 
         total = len(render_files)
         for idx, (item_id, _) in enumerate(render_files):
-            export_name = self.get_export_name(total, idx, render_files) + export_suffix
+            export_name = self.get_export_name(
+                total, idx, render_files) + export_suffix
             self.tree.set(item_id, "preview", export_name)
-        
-        
 
     def btn_run(self):
         self.safe_call(self.btn_run_safe)
@@ -139,7 +138,7 @@ class Tab_One(FilesTab):
             return
 
         # ========= 导出文件 =========
-        
+
         render_files = []
         for item_id in self.tree.get_children():
             k = self.item_to_path[item_id]
