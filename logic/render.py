@@ -1,6 +1,5 @@
 
 from PIL import Image
-import numpy as np
 from logic.modules import TmpTile, TmpFile
 
 
@@ -86,7 +85,7 @@ def extra_image(tile: TmpTile, palette, background_index=0):
     return img, w, h  # , find
 
 
-def render_full_png(tmp: TmpFile, palette, output_img, render_extra=True, out_png=True, out_bmp=False):
+def render_full_png(tmp:TmpFile, palette, output_img, render_extra=True, out_png=True, out_bmp=False):
     """
     组合单个 tile 的 Normal 和 Extra 图像并保存
     返回 img 作为界面预览
@@ -95,56 +94,54 @@ def render_full_png(tmp: TmpFile, palette, output_img, render_extra=True, out_pn
     X, Y, R, B = tmp.compute_canvas_bounds()
     w = R - X
     h = B - Y
-    canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
 
+    if w == 0 or h == 0:
+        # 防止空画布
+        save_canvas = Image.new("RGBA", (w, h))
+        return save_canvas
+
+    canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     half = tmp.BlockHeight // 2
 
     # render order: TileData -> ExtraData overlay -> ZData overlay (if requested)
     for tile in tmp.tiles:
         if tile is None:
             continue
+
         # tile image
-        tile_img = tile_image(tile, tmp.BlockWidth,
-                              tmp.BlockHeight, palette, background_index)
-        # if find:
-        #     # print(f"发现重复地形，在{Path(output_img+'.png').stem}的normal")
-        #     pass
+        tile_img = tile_image(tile, tmp.BlockWidth, tmp.BlockHeight, palette, background_index)
         ox = tile.X - X
         oy = tile.Y - tile.Height * half - Y
         canvas.alpha_composite(tile_img, (ox, oy))
 
-        # ExtraData: rectangular overlay at ExtraX, ExtraY adjusted for height
+        # ExtraData overlay
         if render_extra and tile.has_extra and tile.ExtraData is not None:
-            extra_img, ew, eh = extra_image(
-                tile, palette, background_index)
-            # if find:
-            #     # print(f"发现重复地形，在{Path(output_img+'.png').stem}的extra")
-            #     pass
+            extra_img, ew, eh = extra_image(tile, palette, background_index)
             if extra_img:
                 ex = tile.ExtraX - X
                 ey = tile.ExtraY - tile.Height * half - Y
                 canvas.alpha_composite(extra_img, (ex, ey))
 
-    # 填充背景色
-    arr = np.array(canvas)
-    mask = (arr[..., 3] == 0)
+    # ---------- 填充背景色 ----------
     r, g, b, a = palette[background_index]
-    arr[mask] = [r, g, b, a]
-    save_canvas = Image.fromarray(arr, mode="RGBA")
+    w, h = canvas.size
+    pixels = list(canvas.getdata())  # 扁平化像素
+    new_pixels = [(r, g, b, a) if px[3] == 0 else px for px in pixels]
 
-    h, w = arr.shape[:2]
-    if h == 0 or w == 0:
-        return save_canvas
+    save_canvas = Image.new("RGBA", (w, h))
+    save_canvas.putdata(new_pixels)
 
+    # ---------- 保存输出 ----------
     if out_png:
-        save_canvas.save(output_img+'.png')
-        print("Saved:", output_img+'.png')
+        save_canvas.save(output_img + '.png')
+        print("Saved:", output_img + '.png')
 
     if out_bmp:
-        save_canvas.save(output_img+'.bmp')
-        print("Saved:", output_img+'.bmp')
+        save_canvas.save(output_img + '.bmp')
+        print("Saved:", output_img + '.bmp')
 
     return save_canvas
+
 
 
 def tile_Zdata(tile: TmpTile, bw, bh):
@@ -213,28 +210,32 @@ def extra_ZData(tile: TmpTile):
             px[x, y] = map_z_byte(zb)
     return img, w, h
 
-
-def render_full_ZData(tmp: TmpFile, out_z_png, out_png=False, out_bmp=False):
-    '''
-    TBD
-
-    :param out_z_png: 说明
-    '''
+def render_full_ZData(tmp, out_z_png, out_png=False, out_bmp=False):
+    """
+    渲染 ZData 画布，并填充透明像素为红色
+    """
     X, Y, R, B = tmp.compute_canvas_bounds()
     w = R - X
     h = B - Y
+
+    if w == 0 or h == 0:
+        return Image.new("RGBA", (w, h))
+
     canvas = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     half = tmp.BlockHeight // 2
 
+    # 渲染 tile 的 ZData 和 ExtraZData
     for tile in tmp.tiles:
         if tile is None:
             continue
+
         if tile.has_z and tile.ZData:
             z_img = tile_Zdata(tile, tmp.BlockWidth, tmp.BlockHeight)
             if z_img:
                 ox = tile.X - X
                 oy = tile.Y - tile.Height * half - Y
                 canvas.alpha_composite(z_img, (ox, oy))
+
         if tile.ExtraZData:
             ez_img, ew, eh = extra_ZData(tile)
             if ez_img:
@@ -242,22 +243,21 @@ def render_full_ZData(tmp: TmpFile, out_z_png, out_png=False, out_bmp=False):
                 ey = tile.ExtraY - tile.Height * half - Y
                 canvas.alpha_composite(ez_img, (ex, ey))
 
-    arr = np.array(canvas)
-    mask = (arr[..., 3] == 0)
-    r, g, b, a = [255, 0, 0, 255]
-    arr[mask] = [r, g, b, a]
-    save_canvas = Image.fromarray(arr, mode="RGBA")
+    # ---------- 填充透明像素为红色 (255, 0, 0, 255) ----------
+    r, g, b, a = 255, 0, 0, 255
+    pixels = list(canvas.getdata())
+    new_pixels = [(r, g, b, a) if px[3] == 0 else px for px in pixels]
 
-    h, w = arr.shape[:2]
-    if h == 0 or w == 0:
-        return save_canvas
+    save_canvas = Image.new("RGBA", (w, h))
+    save_canvas.putdata(new_pixels)
 
+    # ---------- 保存 ----------
     if out_png:
-        save_canvas.save(out_z_png+'_z.png')
-        print("Saved:", out_z_png+'_z.png')
+        save_canvas.save(out_z_png + '_z.png')
+        print("Saved:", out_z_png + '_z.png')
 
     if out_bmp:
-        save_canvas.save(out_z_png+'_z.bmp')
-        print("Saved:", out_z_png+'_z.bmp')
+        save_canvas.save(out_z_png + '_z.bmp')
+        print("Saved:", out_z_png + '_z.bmp')
 
     return save_canvas

@@ -18,269 +18,207 @@ class Tab_Four(FilesTab):
     def _init_ui(self):
         super()._init_ui()
 
-        self.lb_show_type = "PAGE_4"
+        self.lb_show_type = "PAGE_1"
 
+        # ----- 文件夹选择
+        self.lb_template.place_forget()
+        self.ent_template.place_forget()
+        self.btn_template.place_forget()
+
+        self.lb_pal_target.place_forget()
         self.ent_pal_target.place_forget()
         self.btn_pal_target.place_forget()
+
         self.ckb_auto_pal_target.place_forget()
 
+        self.path_frame.place(x=10, y=385, width=880, height=120 - 30)
+        self.setting_frame.place(x=10, y=515 - 30, width=880, height=120)
+
         ToolTip(self.ckb_auto_pal_source,
-                "根据设置的导出文件后缀在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
-
-        # 按钮区
-
-        ttk.Button(self.btn_frame, text="添加",
-                   command=self.btn_add_files).place(x=3, y=0, width=80, height=25)
-        ttk.Button(self.btn_frame, text="移除",
-                   command=self.btn_remove_selected).place(x=3, y=30, width=80, height=25)
-        ttk.Button(self.btn_frame, text="清空全部",
-                   command=self.btn_remove_all).place(x=3, y=60, width=80, height=25)
-        ttk.Button(self.btn_frame, text="导出文件",
-                   command=self.btn_run).place(x=3, y=110, width=80, height=25)
-
-        # 导出设置
-        self.setting_frame.place(x=270, y=105, width=500, height=300)
-
-        self.lb_save_name.place(x=120)
-        self.ent_save_name.place(x=178)
-
-        self.lb_prefix.place(x=120)
-        self.ent_prefix.place(x=178)
-
-        self.lb_suffix.place(x=120)
-        self.ent_suffix.place(x=178)
-
-        self.var_auto_radar = tk.StringVar(value="enable")
-        self.var_impt_img = tk.StringVar(value="enable")
-        self.var_impt_ext = tk.StringVar(value="enable")
-
-        self.ckb_auto_radar = ttk.Checkbutton(
-            self.setting_frame, text="自动雷达色", variable=self.var_auto_radar, onvalue="enable", offvalue="disable")
-        self.ckb_auto_radar.place(x=0, y=25, width=100, height=25)
-        ToolTip(self.ckb_auto_radar, "自动修改雷达色")
-
-        self.ckb_impt_img = ttk.Checkbutton(
-            self.setting_frame, text="导入图像", variable=self.var_impt_img, onvalue="enable", offvalue="disable")
-        self.ckb_impt_img.place(x=0, y=50, width=100, height=25)
-        ToolTip(self.ckb_impt_img, "导入 Normal 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
-
-        self.ckb_impt_ext = ttk.Checkbutton(
-            self.setting_frame, text="导入额外图像", variable=self.var_impt_ext, onvalue="enable", offvalue="disable")
-        self.ckb_impt_ext.place(x=0, y=75, width=100, height=25)
-        ToolTip(self.ckb_impt_ext, "导入 Extra 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
-
-        # 指定模板
-        self.var_specify_template = tk.StringVar()
-        self.cb_specify_template = ttk.Combobox(
-            self.setting_frame,
-            textvariable=self.var_specify_template,
-            values=("使用选中模板", "图像文件名匹配", "模板文件夹匹配"),
-            state="readonly")
-        ToolTip(self.cb_specify_template,
-                "使用选中模板：按 [当前选中模板] 导出全部文件\n"
-                "图像文件名匹配：在 [图像所在文件夹] 中选择图像同名文件\n"
-                "模板文件夹匹配：在 [当前选中模板所在文件夹] 中选择图像同名文件\n"
-                "匹配时默认使用 自动色盘 转换对应气候")
-        ttk.Label(self.setting_frame, text="导出模式：").place(
-            x=320, y=0, width=60, height=20)
-        self.cb_specify_template.place(x=320, y=25, width=115, height=24)
-        self.cb_specify_template.current(0)
-
-        self.var_output_theater = tk.StringVar()
-        self.output_theater_values = ["按选中模板气候"]
-        self.output_theater_values += ["转换为"+i[1:] for i in self.theaters]
-
-        self.cb_output_theater = ttk.Combobox(
-            self.setting_frame,
-            textvariable=self.var_output_theater,
-            values=self.output_theater_values,
-            state="readonly")
-        ToolTip(self.cb_output_theater,
-                "导出文件的气候类型")
-        self.cb_output_theater.place(x=320, y=60, width=115, height=24)
-        self.cb_output_theater.current(0)
-
-        # 模板
-        self.path_frame.place(height=85)
+                "根据 TMP 文件后缀 在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
 
         ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
-                                    "导出文件将会命名为 [文本][起始序号].[气候名]")
-    # --------- 行为逻辑 ---------
+                                    "导出文件将会命名为 [文本][起始序号].[png/bmp]")
 
-    def btn_add_files(self):
-        files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
-            ("Image files", "*.png *.bmp"),
-            ("PNG", "*.png"),
-            ("BMP", "*.bmp")
-        ])
-        for f in files:
-            if f not in self.item_to_path:
-                self.item_to_path.append(f)
-                self.tree.insert(tk.END, Path(f).name)
-        self.save_config()
+        # 导出 Zdata
+        self.var_zdata_mode = tk.StringVar(value="disable")
 
-    # --------- 导出图像 ---------
+        self.ckb_zdata_mode = ttk.Checkbutton(
+            self.setting_frame, text="Zdata 模式", variable=self.var_zdata_mode, onvalue="enable", offvalue="disable")
 
-    def _find_template(self, mode, import_img, img_stem, output_theater):
-        '''
-        模板查找
+        self.ckb_zdata_mode.place(x=220, y=30, width=100, height=25)
 
-        mode: 匹配模式
-        img_stem: 文件名
-        '''
+        ToolTip(self.ckb_zdata_mode,
+                "导出图像的 Zdata\n原始值 0-29对应图像 (0,0,0) 到 (232,232,232)")
 
-        if mode == "temp":
-            return self.path_template if Path(self.path_template).is_file() else ""
+        # 导出 PNG
+        self.var_exp_png = tk.StringVar(value="enable")
 
-        if mode == "img":
-            img_path = Path(import_img)
-            for t in (output_theater, *self.theaters):
-                p = img_path.with_suffix(t)
-                if p.is_file():
-                    return str(p)
+        self.ckb_exp_png = ttk.Checkbutton(
+            self.setting_frame, text="导出 PNG", variable=self.var_exp_png, onvalue="enable", offvalue="disable")
 
-        if mode == "tem":
-            base = Path(self.path_template).parent / img_stem
-            for t in (output_theater, *self.theaters):
-                p = base.with_suffix(t)
-                if p.is_file():
-                    return str(p)
+        self.ckb_exp_png.place(x=350, y=5, width=80, height=25)
+        ToolTip(self.ckb_exp_png, "导出为 PNG 文件")
 
-        return ""
+        # 导出 BMP
+        self.var_exp_bmp = tk.StringVar(value="disable")
 
-    def _build_save_path(self, import_img, save_index, total, output_theater):
+        self.ckb_exp_bmp = ttk.Checkbutton(
+            self.setting_frame, text="导出 BMP", variable=self.var_exp_bmp, onvalue="enable", offvalue="disable")
 
-        text_save_name, start_index = self.get_export_name()
+        self.ckb_exp_bmp.place(x=350, y=30, width=80, height=25)
+        ToolTip(self.ckb_exp_bmp, "导出为 BMP 文件")
 
-        if text_save_name:
-            width = len(str(total))
-            name = f"{text_save_name}{str(save_index + start_index - 1).zfill(width)}{output_theater}"
-        else:
-            name = f"{Path(import_img).stem}{output_theater}"
+        self.var_zdata_mode.trace_add("write", self.file_on_select)
 
-        return Path(self.path_out_floder) / name
+        self.var_zdata_mode.trace_add("write", self.refresh_export_preview)
+        self.var_exp_png.trace_add("write", self.refresh_export_preview)
+        self.var_exp_bmp.trace_add("write", self.refresh_export_preview)
 
-    def _ensure_template_copy(self, template_tmp, save_path):
-        if save_path.exists():
-            return
+    def refresh_export_preview(self, *args):
 
-        save_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(template_tmp, "rb") as src, open(save_path, "wb") as dst:
-            dst.write(src.read())
-
-    def _process_one(self, import_img, template_tmp, palette, save_path):
-        tmp = TmpFile(template_tmp)
-
-        ok, size1, size2 = impt.import_image_to_tmp(
-            tmp,
-            import_img,
-            palette,
-            auto_radar=self.var_auto_radar.get() == "enable",
-            change_normal=self.var_impt_img.get() == "enable",
-            change_extra=self.var_impt_ext.get() == "enable"
-        )
-        
-        self.show_preview(Image.open(import_img))
-
-        if not ok:
-            self.log(
-                f"文件 {import_img}\n与模板{template_tmp}\n"
-                f"大小不一致！\t文件大小：{size1}\t模板大小：{size2}",
-                "ERROR"
-            )
-            return False
-
-        self._ensure_template_copy(template_tmp, save_path)
-        impt.save_tmpfile(tmp, save_path)
-        return True
-    
-    def btn_run(self):
-        self.safe_call(self.btn_run_safe)
-
-    def btn_run_safe(self):
-        self.path_pal_source = self.ent_pal_source.get()
-        self.path_out_floder = self.ent_out_floder.get()
-        self.path_template = self.ent_template.get()
-        self.lst_files = self.item_to_path.copy()
-
-        if not Path(self.path_pal_source).is_file():
-            messagebox.showwarning("警告", "未选择色盘")
-            return
+        render_files = []
 
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
 
-        render_files = [
-            str(Path(p))
-            for p in self.item_to_path
-            if Path(p).is_file()
-            and Path(p).name.startswith(prefix)
-            and Path(p).name.endswith(suffix)
-        ]
+        for item_id in self.tree.get_children():
+            k = self.item_to_path[item_id]
+            if k.startswith(prefix) and k.endswith(suffix):
+                p = Path(k)
+                if p.is_file():
+                    render_files.append((item_id, p))
 
-        if not render_files:
-            messagebox.showwarning("Warning", "Not file choosed")
+        bmp = self.var_exp_bmp.get() == "enable"
+        png = self.var_exp_png.get() == "enable"
+        if not bmp and not png:
+            for idx, (item_id, _) in enumerate(render_files):
+                self.tree.set(item_id, "preview", "无")
             return
 
-        self.log(f"开始导出已选择的{len(render_files)}个文件")
-        self.save_config()
-        self.load_config()
+        export_suffix = "_z" if self.var_zdata_mode.get() != "disable" else ""
+        if bmp and png:
+            suffix = ".bmp/png"
+        elif bmp:
+            suffix = ".bmp"
+        elif png:
+            suffix = ".png"
+        else:
+            suffix = ""
+        export_suffix += suffix
 
-        mode_map = {
-            "使用选中模板": "temp",
-            "图像文件名匹配": "img",
-            "模板文件夹匹配": "tem",
-        }
-        mode = mode_map.get(self.var_specify_template.get())
+        total = len(render_files)
+        for idx, (item_id, _) in enumerate(render_files):
+            export_name = self.get_export_name(
+                total, idx, render_files) + export_suffix
+            self.tree.set(item_id, "preview", export_name)
 
-        if not mode:
+    def btn_run(self):
+        self.safe_call(self.btn_run_safe)
+
+    def btn_run_safe(self):
+
+        # ========= 基础参数 =========
+        pal_source = self.ent_pal_source.get()
+        out_folder = self.ent_out_floder.get().strip()
+
+        prefix = self.ent_prefix.get().split("\n")[0].strip()
+        suffix = self.ent_suffix.get().split("\n")[0].strip()
+
+        export_bmp = self.var_exp_bmp.get() == "enable"
+        export_png = self.var_exp_png.get() == "enable"
+
+        # ========= 参数校验 =========
+        if not (export_bmp or export_png):
             messagebox.showwarning("警告", "未选择导出格式")
             return
 
-        if self.var_output_theater.get() == "按选中模板气候":
-            save_theater = self.path_template[-4:]
-        else:
-            save_theater = "." + self.var_output_theater.get()[3:].lower()
+        if not Path(pal_source).is_file():
+            messagebox.showwarning("警告", "未选择色盘")
+            return
 
-        save_index = 1
-        log_warns = 0
+        # ========= 导出文件 =========
+
+        render_files = []
+        for item_id in self.tree.get_children():
+            k = self.item_to_path[item_id]
+            if k.startswith(prefix) and k.endswith(suffix):
+                p = Path(k)
+                if p.is_file():
+                    render_files.append(p)
+
+        if not render_files:
+            messagebox.showwarning("警告", "未选择需要导出的 TMP 文件")
+            return
+
         total = len(render_files)
+        self.log(f"开始导出已选择的 {total} 个文件")
+        self.save_config()
+        self.load_config()
 
-        for i, import_img in enumerate(render_files, 1):
-            self.log(f"正在导出第{i}个文件 {import_img}")
+        failed_count = 0
 
-            template_tmp = self._find_template(
-                mode,
-                import_img,
-                Path(import_img).stem,
-                save_theater
-            )
+        # ========= 主循环 =========
+        for index, img_path in enumerate(render_files, 1):
 
-            if not template_tmp:
-                self.log(f"文件 {import_img}\n未找到对应模板", "ERROR")
-                log_warns += 1
-                continue
+            # 默认输出目录
+            target_dir = Path(out_folder) if out_folder else img_path.parent
+            target_dir.mkdir(parents=True, exist_ok=True)
 
-            palette = self.get_source_pal(save_theater)
-            save_path = self._build_save_path(
-                import_img, save_index, total, save_theater
-            )
+            palette = self.get_source_pal(str(img_path))
+            self.log(f"正在导出第{index}个文件 {img_path}")
 
-            ok = self._process_one(
-                import_img, template_tmp, palette, save_path
-            )
+            # 输出文件名
+            export_name = self.get_export_name(total, index - 1)
+            base_name = export_name if export_name else img_path.stem
+            output_base = target_dir / base_name
 
-            if ok:
-                self.log(f"已导出第{i}个文件 {save_path}")
-                save_index += 1
+            tmp_file = TmpFile(str(img_path))
+
+            # ========= 渲染 =========
+            if self.var_zdata_mode.get() == "disable":
+                image = render.render_full_png(
+                    tmp_file,
+                    palette,
+                    str(output_base),
+                    render_extra=True,
+                    out_bmp=export_bmp,
+                    out_png=export_png
+                )
             else:
-                log_warns += 1
+                image = render.render_full_ZData(
+                    tmp_file,
+                    str(output_base),
+                    out_bmp=export_bmp,
+                    out_png=export_png
+                )
+                output_base = Path(f"{output_base}_z")
+
+            # ========= 结果处理 =========
+            if not self.is_valid_pil_image(image):
+                self.log(f"第{index}个文件导出失败：{img_path}", "WARN")
+                failed_count += 1
+                continue
+            
+            if total < 100:
+                self.show_preview(image)
+
+            if export_bmp:
+                self.log(f"已导出 BMP：{output_base.with_suffix('.bmp')}")
+            if export_png:
+                self.log(f"已导出 PNG：{output_base.with_suffix('.png')}")
 
         self.log("", "PASS")
-        if log_warns == 0:
-            self.log(f"已导出全部{total}文件\n\n", "SUCCESS")
+
+        if failed_count == 0:
+            self.log(f"已导出全部{total}个文件\n\n", "SUCCESS")
+        elif failed_count == total:
+            self.log(
+                f"全部{total}个文件导出失败！ \n\n",
+                "ERROR"
+            )
         else:
             self.log(
-                f"已导出{total - log_warns}/{total}个文件，其中{log_warns}个文件发生错误\n\n",
+                f"已导出{total - failed_count}/{total}个文件，其中{failed_count}个文件发生错误\n\n",
                 "WARN"
             )

@@ -199,8 +199,9 @@ class Tab_One(FilesTab):
                 self.log(f"第{index}个文件导出失败：{img_path}", "WARN")
                 failed_count += 1
                 continue
-
-            self.show_preview(image)
+            
+            if total < 100:
+                self.show_preview(image)
 
             if export_bmp:
                 self.log(f"已导出 BMP：{output_base.with_suffix('.bmp')}")

@@ -78,9 +78,9 @@ class App(tk.Tk):
         self.tab_3 = Tab_Three(notebook, self.append_log)
         notebook.add(self.tab_3, text="气候转换")
 
-        # # 第四标签页
-        # self.tab_4 = Tab_Four(notebook, self.append_log)
-        # notebook.add(self.tab_4, text="Zdata")
+        # 第四标签页
+        self.tab_4 = Tab_Four(notebook, self.append_log)
+        notebook.add(self.tab_4, text="图像切块")
 
         notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
         self._init_log()

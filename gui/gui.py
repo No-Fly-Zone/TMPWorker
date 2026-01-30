@@ -48,7 +48,7 @@ SECTION_LIST = "Files"
 DIR_TMP = "TMP_Files"
 DIR_IMAGE = "Image_Files"
 DIR_TMP_CONVERT = "TMP_Convert_Files"
-DIR_ZDATA = "ZData_Files"
+DIR_PNG = "PNG_Files"
 
 SECTION_PATH = "Paths"
 DIR_PAL_SOURCE = "Source_Palette"
@@ -112,19 +112,19 @@ class AdvancedSortableTreeview(ttk.Treeview):
             self.drag_window.attributes('-alpha', 0.7)
 
             # 创建预览内容
-            frame = tk.Frame(self.drag_window, bg='lightblue', relief='solid')
+            frame = tk.Frame(self.drag_window, bg='lightgrey', relief='solid')
             frame.pack(fill=tk.BOTH, expand=True)
 
             # 显示项目内容
             text = self.drag_data['text']
             values = self.drag_data['values']
 
-            tk.Label(frame, text=text, bg='lightblue',
+            tk.Label(frame, text=text, bg='lightgrey',
                      font=('Arial', 10, 'bold')).pack(pady=2, padx=10)
 
             if values:
                 for value in values:
-                    tk.Label(frame, text=value, bg='lightblue').pack(
+                    tk.Label(frame, text=value, bg='lightgrey').pack(
                         pady=1, padx=10)
 
         # 移动预览窗口
@@ -316,6 +316,7 @@ class FilesTab(ttk.Frame):
         self.tree.bind("<<TreeviewSelect>>", self.file_on_select)
         self.show_preview(Image.new("RGB", (10, 10), (255, 255, 255)))
 
+        ttk.Label(self.file_frame, text="测试版 v0.1 by No-FlyZone",font=("Microsoft YaHei UI", 8)).place(x=650, y=320, width=200, height=20)
         # ttk.Button(self.file_frame, text="导出",
         #            command=self.btn_run).place(x=3, y=350, width=80, height=25)
 
@@ -871,7 +872,7 @@ class FilesTab(ttk.Frame):
                        saved_list_str)
 
         if self.lb_show_type == "PAGE_4":
-            config.set(SECTION_LIST, DIR_ZDATA,
+            config.set(SECTION_LIST, DIR_PNG,
                        saved_list_str)
 
         config[SECTION_PATH] = {
@@ -938,7 +939,7 @@ class FilesTab(ttk.Frame):
         if self.lb_show_type == "PAGE_3":
             list_name = DIR_TMP_CONVERT
         if self.lb_show_type == "PAGE_4":
-            list_name = DIR_ZDATA
+            list_name = DIR_PNG
 
         raw = config.get(SECTION_LIST, list_name, fallback="")
         self.lst_files = [i for i in raw.splitlines(

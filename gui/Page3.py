@@ -119,7 +119,7 @@ class Tab_Three(FilesTab):
         with open(template_tmp, "rb") as src, open(save_path, "wb") as dst:
             dst.write(src.read())
 
-    def _process_one(self, import_img, template_tmp, palette, save_path):
+    def _process_one(self, import_img, template_tmp, palette, save_path, total):
         tmp = TmpFile(template_tmp)
 
         ok, size1, size2 = impt.import_image_to_tmp(
@@ -129,7 +129,8 @@ class Tab_Three(FilesTab):
             img=import_img
         )
 
-        self.show_preview(import_img)
+        if total < 100:
+            self.show_preview(import_img)
 
         if not ok:
             self.log(
@@ -204,7 +205,7 @@ class Tab_Three(FilesTab):
             )
 
             if self._process_one(
-                re_image, tmp_path, pal_target, save_path
+                re_image, tmp_path, pal_target, save_path, total
             ):
                 self.log(f"已导出第{index}个文件 {save_path}")
             else:
