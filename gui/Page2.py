@@ -278,7 +278,7 @@ class Tab_Two(FilesTab):
 
             palette = self.get_source_pal(save_theater)
             save_path = self._build_save_path(
-                img_path, total, save_theater, index
+                img_path, total, save_theater, index - 1
             )
 
             if self._process_one(

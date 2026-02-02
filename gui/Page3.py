@@ -201,7 +201,7 @@ class Tab_Three(FilesTab):
             pal_target = self.get_target_pal(output_theater)
 
             save_path = self._build_save_path(
-                tmp_path, total, output_theater, index
+                tmp_path, total, output_theater, index - 1
             )
 
             if self._process_one(

@@ -6,6 +6,8 @@ from PIL import Image, ImageTk
 from logic.modules import TmpFile, PalFile
 import logic.image as impt
 import logic.render as render
+from logic.split import split_image_by_diamond_grid
+from logic.splitcover import create_ab_diamond_mask
 
 from pathlib import Path
 # import sys
@@ -18,7 +20,7 @@ class Tab_Four(FilesTab):
     def _init_ui(self):
         super()._init_ui()
 
-        self.lb_show_type = "PAGE_1"
+        self.lb_show_type = "PAGE_4"
 
         # ----- 文件夹选择
         self.lb_template.place_forget()
@@ -29,27 +31,14 @@ class Tab_Four(FilesTab):
         self.ent_pal_target.place_forget()
         self.btn_pal_target.place_forget()
 
+        self.ckb_auto_pal_source.place_forget()
         self.ckb_auto_pal_target.place_forget()
 
         self.path_frame.place(x=10, y=385, width=880, height=120 - 30)
         self.setting_frame.place(x=10, y=515 - 30, width=880, height=120)
 
-        ToolTip(self.ckb_auto_pal_source,
-                "根据 TMP 文件后缀 在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")
-
         ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
                                     "导出文件将会命名为 [文本][起始序号].[png/bmp]")
-
-        # 导出 Zdata
-        self.var_zdata_mode = tk.StringVar(value="disable")
-
-        self.ckb_zdata_mode = ttk.Checkbutton(
-            self.setting_frame, text="Zdata 模式", variable=self.var_zdata_mode, onvalue="enable", offvalue="disable")
-
-        self.ckb_zdata_mode.place(x=220, y=30, width=100, height=25)
-
-        ToolTip(self.ckb_zdata_mode,
-                "导出图像的 Zdata\n原始值 0-29对应图像 (0,0,0) 到 (232,232,232)")
 
         # 导出 PNG
         self.var_exp_png = tk.StringVar(value="enable")
@@ -69,9 +58,6 @@ class Tab_Four(FilesTab):
         self.ckb_exp_bmp.place(x=350, y=30, width=80, height=25)
         ToolTip(self.ckb_exp_bmp, "导出为 BMP 文件")
 
-        self.var_zdata_mode.trace_add("write", self.file_on_select)
-
-        self.var_zdata_mode.trace_add("write", self.refresh_export_preview)
         self.var_exp_png.trace_add("write", self.refresh_export_preview)
         self.var_exp_bmp.trace_add("write", self.refresh_export_preview)
 
@@ -96,7 +82,6 @@ class Tab_Four(FilesTab):
                 self.tree.set(item_id, "preview", "无")
             return
 
-        export_suffix = "_z" if self.var_zdata_mode.get() != "disable" else ""
         if bmp and png:
             suffix = ".bmp/png"
         elif bmp:
@@ -105,7 +90,7 @@ class Tab_Four(FilesTab):
             suffix = ".png"
         else:
             suffix = ""
-        export_suffix += suffix
+        export_suffix = suffix
 
         total = len(render_files)
         for idx, (item_id, _) in enumerate(render_files):
@@ -113,13 +98,30 @@ class Tab_Four(FilesTab):
                 total, idx, render_files) + export_suffix
             self.tree.set(item_id, "preview", export_name)
 
+    def btn_add_files(self):
+        files = filedialog.askopenfilenames(title="选择文件",    filetypes=[
+            ("Image files", "*.png *.bmp"),
+            ("PNG", "*.png"),
+            ("BMP", "*.bmp")
+        ])
+
+        existing_paths = set(self.item_to_path.values())
+        for f in files:
+            if f in existing_paths:
+                continue
+            preview_name = "notaval"
+            item_id = self.tree.insert(
+                "", "end", values=(Path(f).name, preview_name))
+            self.item_to_path[item_id] = f
+
+        self.save_config()
+
     def btn_run(self):
         self.safe_call(self.btn_run_safe)
 
     def btn_run_safe(self):
 
         # ========= 基础参数 =========
-        pal_source = self.ent_pal_source.get()
         out_folder = self.ent_out_floder.get().strip()
 
         prefix = self.ent_prefix.get().split("\n")[0].strip()
@@ -133,10 +135,6 @@ class Tab_Four(FilesTab):
             messagebox.showwarning("警告", "未选择导出格式")
             return
 
-        if not Path(pal_source).is_file():
-            messagebox.showwarning("警告", "未选择色盘")
-            return
-
         # ========= 导出文件 =========
 
         render_files = []
@@ -148,7 +146,7 @@ class Tab_Four(FilesTab):
                     render_files.append(p)
 
         if not render_files:
-            messagebox.showwarning("警告", "未选择需要导出的 TMP 文件")
+            messagebox.showwarning("警告", "未选择需要导出的文件")
             return
 
         total = len(render_files)
@@ -157,56 +155,38 @@ class Tab_Four(FilesTab):
         self.load_config()
 
         failed_count = 0
+        sub_index = 1
 
-        # ========= 主循环 =========
         for index, img_path in enumerate(render_files, 1):
+            a, b = 1, 2
 
-            # 默认输出目录
             target_dir = Path(out_folder) if out_folder else img_path.parent
             target_dir.mkdir(parents=True, exist_ok=True)
 
-            palette = self.get_source_pal(str(img_path))
             self.log(f"正在导出第{index}个文件 {img_path}")
 
             # 输出文件名
-            export_name = self.get_export_name(total, index - 1)
+            export_name = self.get_export_name(total, sub_index - 1)
             base_name = export_name if export_name else img_path.stem
-            output_base = target_dir / base_name
 
-            tmp_file = TmpFile(str(img_path))
+            big_image = Image.open(str(img_path)).convert("RGBA")
+            sub_images = split_image_by_diamond_grid(big_image, a, b)
+            cover = create_ab_diamond_mask(a, b)
 
-            # ========= 渲染 =========
-            if self.var_zdata_mode.get() == "disable":
-                image = render.render_full_png(
-                    tmp_file,
-                    palette,
-                    str(output_base),
-                    render_extra=True,
-                    out_bmp=export_bmp,
-                    out_png=export_png
-                )
-            else:
-                image = render.render_full_ZData(
-                    tmp_file,
-                    str(output_base),
-                    out_bmp=export_bmp,
-                    out_png=export_png
-                )
-                output_base = Path(f"{output_base}_z")
+            for i, img in enumerate(sub_images,1):
+                fname = f"_{str(i).zfill(len(str(len(sub_images))))}.png"
+                output_name = target_dir / (base_name + fname)
+                result = Image.alpha_composite(img, cover)
+                result.save(output_name)
+                
+                self.show_preview(result)
 
-            # ========= 结果处理 =========
-            if not self.is_valid_pil_image(image):
-                self.log(f"第{index}个文件导出失败：{img_path}", "WARN")
-                failed_count += 1
-                continue
-            
-            if total < 100:
-                self.show_preview(image)
+            output_base = str(target_dir / base_name)
 
             if export_bmp:
-                self.log(f"已导出 BMP：{output_base.with_suffix('.bmp')}")
+                self.log(f"已导出 BMP：{output_base}")
             if export_png:
-                self.log(f"已导出 PNG：{output_base.with_suffix('.png')}")
+                self.log(f"已导出 PNG：{output_base}")
 
         self.log("", "PASS")
 
