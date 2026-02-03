@@ -58,6 +58,15 @@ class Tab_Four(FilesTab):
         self.ckb_exp_bmp.place(x=350, y=30, width=80, height=25)
         ToolTip(self.ckb_exp_bmp, "导出为 BMP 文件")
 
+        # 切块图像大小
+        ttk.Label(self.setting_frame, text="切块大小：").place(
+            x=500, y=7, width=60, height=20)
+
+        self.ent_size = tk.Entry(
+            self.setting_frame, relief="flat", insertwidth=1)
+        self.ent_size.place(x=560, y=7, width=104, height=20)
+        ToolTip(self.ent_size, "切块图像大小，格式为 [长度@宽度]\n长度为右侧格子数量，宽度为左侧")
+
         self.var_exp_png.trace_add("write", self.refresh_export_preview)
         self.var_exp_bmp.trace_add("write", self.refresh_export_preview)
 
@@ -83,11 +92,11 @@ class Tab_Four(FilesTab):
             return
 
         if bmp and png:
-            suffix = ".bmp/png"
+            suffix = "_*.bmp/png"
         elif bmp:
-            suffix = ".bmp"
+            suffix = "_*.bmp"
         elif png:
-            suffix = ".png"
+            suffix = "_*.png"
         else:
             suffix = ""
         export_suffix = suffix
@@ -116,6 +125,40 @@ class Tab_Four(FilesTab):
 
         self.save_config()
 
+    def get_export_size(self):
+        '''
+        获取导出名称，返回 text, start_index
+
+        :text: 命名文本
+        :start_index: 起始序号
+        '''
+        raw_text = self.ent_size.get().split("\n", 1)[0]
+
+        if not raw_text:
+            return 1, 1
+
+        at_count = raw_text.count("@")
+
+        if at_count == 0:
+            return 1, 1
+
+        if at_count > 1:
+            self.log(
+                "切块图像大小存在多个@\n切块图像大小，格式为 [长度@宽度]\n长度为右侧格子数量，宽度为左侧。只能包含 1 个 @", "WARN")
+            return 1, 1
+
+        a, b = raw_text.split("@")
+
+        if a.isdigit() and b.isdigit():
+            a = int(a)
+            b = int(b)
+
+        if a > 0 and b > 0:
+            return a, b
+        self.log(
+            "切块图像大小中 [长度] 或 [宽度] 错误，使用 1x1 大小\n""切块图像大小格式为 [长度@宽度]", "WARN")
+        return 1, 1
+
     def btn_run(self):
         self.safe_call(self.btn_run_safe)
 
@@ -126,6 +169,7 @@ class Tab_Four(FilesTab):
 
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
+        a,b = self.get_export_size()
 
         export_bmp = self.var_exp_bmp.get() == "enable"
         export_png = self.var_exp_png.get() == "enable"
@@ -158,8 +202,6 @@ class Tab_Four(FilesTab):
         sub_index = 1
 
         for index, img_path in enumerate(render_files, 1):
-            a, b = 1, 2
-
             target_dir = Path(out_folder) if out_folder else img_path.parent
             target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -170,15 +212,21 @@ class Tab_Four(FilesTab):
             base_name = export_name if export_name else img_path.stem
 
             big_image = Image.open(str(img_path)).convert("RGBA")
-            sub_images = split_image_by_diamond_grid(big_image, a, b)
+            sub_images, ok = split_image_by_diamond_grid(big_image, a, b)
+            if not ok:
+                self.log(f"第{index}个文件 {img_path}导出失败", "WARN")
+                self.log(f"设定大小 {sub_images[0]}x{sub_images[1]} 大于图像大小 {sub_images[2]}x{sub_images[3]}", "WARN")
+                
+                failed_count += 1
+                continue
             cover = create_ab_diamond_mask(a, b)
 
-            for i, img in enumerate(sub_images,1):
+            for i, img in enumerate(sub_images, 1):
                 fname = f"_{str(i).zfill(len(str(len(sub_images))))}.png"
                 output_name = target_dir / (base_name + fname)
                 result = Image.alpha_composite(img, cover)
                 result.save(output_name)
-                
+
                 self.show_preview(result)
 
             output_base = str(target_dir / base_name)

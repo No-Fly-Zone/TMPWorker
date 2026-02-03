@@ -57,6 +57,8 @@ def split_image_by_diamond_grid(big_image, a, b):
     n, m = compute_diamond_nm(big_image)
     boxes = compute_diamond_boxes(n, m)
     results = []
+    if a > n or b > m:
+        return [a,b,n,m], False
 
     for base_row in range(0, m, b):
         for base_col in range(0, n, a):
@@ -96,7 +98,7 @@ def split_image_by_diamond_grid(big_image, a, b):
 
             results.append(sub_img)
 
-    return results
+    return results, True
 # def main():
 #     # 参数示例
 #     n, m = 10, 10     # 原图菱形网格
