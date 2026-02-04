@@ -34,8 +34,12 @@ class Tab_Four(FilesTab):
         self.ckb_auto_pal_source.place_forget()
         self.ckb_auto_pal_target.place_forget()
 
-        self.path_frame.place(x=10, y=385, width=880, height=120 - 30)
-        self.setting_frame.place(x=10, y=515 - 30, width=880, height=120)
+        self.lb_pal_source.place_forget()
+        self.ent_pal_source.place_forget()
+
+        self.path_frame.place(x=10, y=385, width=880, height=120 - 30 - 30)
+
+        self.setting_frame.place(x=10, y=515 - 30 - 30, width=880, height=120)
 
         ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
                                     "导出文件将会命名为 [文本][起始序号].[png/bmp]")
@@ -67,8 +71,16 @@ class Tab_Four(FilesTab):
         self.ent_size.place(x=560, y=7, width=104, height=20)
         ToolTip(self.ent_size, "切块图像大小，格式为 [长度@宽度]\n长度为右侧格子数量，宽度为左侧")
 
+        ttk.Label(self.setting_frame, text="导出数量上限：").place(
+            x=500, y=32, width=80, height=20)
+        self.ent_maxsubs = tk.Entry(
+            self.setting_frame, relief="flat", insertwidth=1)
+        self.ent_maxsubs.place(x=585, y=32, width=80, height=20)
+        ToolTip(self.ent_maxsubs, "单张图片只导出前 [数字] 张")
+
         self.var_exp_png.trace_add("write", self.refresh_export_preview)
         self.var_exp_bmp.trace_add("write", self.refresh_export_preview)
+
 
     def refresh_export_preview(self, *args):
 
@@ -169,10 +181,16 @@ class Tab_Four(FilesTab):
 
         prefix = self.ent_prefix.get().split("\n")[0].strip()
         suffix = self.ent_suffix.get().split("\n")[0].strip()
-        a,b = self.get_export_size()
+        a, b = self.get_export_size()
 
         export_bmp = self.var_exp_bmp.get() == "enable"
         export_png = self.var_exp_png.get() == "enable"
+
+        max_subs = self.ent_maxsubs.get().split("\n", 1)[0]
+        if not max_subs.isdigit():
+            max_subs = -1
+        else:
+            max_subs = int(max_subs)
 
         # ========= 参数校验 =========
         if not (export_bmp or export_png):
@@ -199,7 +217,6 @@ class Tab_Four(FilesTab):
         self.load_config()
 
         failed_count = 0
-        sub_index = 1
 
         for index, img_path in enumerate(render_files, 1):
             target_dir = Path(out_folder) if out_folder else img_path.parent
@@ -208,26 +225,29 @@ class Tab_Four(FilesTab):
             self.log(f"正在导出第{index}个文件 {img_path}")
 
             # 输出文件名
-            export_name = self.get_export_name(total, sub_index - 1)
+            export_name = self.get_export_name(total, index - 1)
             base_name = export_name if export_name else img_path.stem
 
             big_image = Image.open(str(img_path)).convert("RGBA")
             sub_images, ok = split_image_by_diamond_grid(big_image, a, b)
             if not ok:
                 self.log(f"第{index}个文件 {img_path}导出失败", "WARN")
-                self.log(f"设定大小 {sub_images[0]}x{sub_images[1]} 大于图像大小 {sub_images[2]}x{sub_images[3]}", "WARN")
-                
+                self.log(
+                    f"设定大小 {sub_images[0]}x{sub_images[1]} 大于图像大小 {sub_images[2]}x{sub_images[3]}", "WARN")
+
                 failed_count += 1
                 continue
             cover = create_ab_diamond_mask(a, b)
 
             for i, img in enumerate(sub_images, 1):
-                fname = f"_{str(i).zfill(len(str(len(sub_images))))}.png"
-                output_name = target_dir / (base_name + fname)
-                result = Image.alpha_composite(img, cover)
-                result.save(output_name)
+                if max_subs > 0 and max_subs >= i:
 
-                self.show_preview(result)
+                    fname = f"_{str(i).zfill(len(str(len(sub_images))))}.png"
+                    output_name = target_dir / (base_name + fname)
+                    result = Image.alpha_composite(img, cover)
+                    result.save(output_name)
+
+                    self.show_preview(result)
 
             output_base = str(target_dir / base_name)
 
