@@ -36,6 +36,7 @@ class Tab_Four(FilesTab):
 
         self.lb_pal_source.place_forget()
         self.ent_pal_source.place_forget()
+        self.btn_pal_source.place_forget()
 
         self.path_frame.place(x=10, y=385, width=880, height=120 - 30 - 30)
 
@@ -69,7 +70,7 @@ class Tab_Four(FilesTab):
         self.ent_size = tk.Entry(
             self.setting_frame, relief="flat", insertwidth=1)
         self.ent_size.place(x=560, y=7, width=104, height=20)
-        ToolTip(self.ent_size, "切块图像大小，格式为 [长度@宽度]\n长度为右侧格子数量，宽度为左侧")
+        ToolTip(self.ent_size, "切块图像大小，格式为 [长度x宽度]\n长度为右侧格子数量，宽度为左侧")
 
         ttk.Label(self.setting_frame, text="导出数量上限：").place(
             x=500, y=32, width=80, height=20)
@@ -144,22 +145,23 @@ class Tab_Four(FilesTab):
         :text: 命名文本
         :start_index: 起始序号
         '''
+        split_mark = "@"
         raw_text = self.ent_size.get().split("\n", 1)[0]
 
         if not raw_text:
             return 1, 1
 
-        at_count = raw_text.count("@")
+        at_count = raw_text.count(split_mark)
 
         if at_count == 0:
             return 1, 1
 
         if at_count > 1:
             self.log(
-                "切块图像大小存在多个@\n切块图像大小，格式为 [长度@宽度]\n长度为右侧格子数量，宽度为左侧。只能包含 1 个 @", "WARN")
+                "切块图像大小存在多个分隔符\n切块图像大小，格式为 [长度x宽度]\n长度为右侧格子数量，宽度为左侧。只能包含 1 个 分隔符", "WARN")
             return 1, 1
 
-        a, b = raw_text.split("@")
+        a, b = raw_text.split(split_mark)
 
         if a.isdigit() and b.isdigit():
             a = int(a)
@@ -168,7 +170,7 @@ class Tab_Four(FilesTab):
         if a > 0 and b > 0:
             return a, b
         self.log(
-            "切块图像大小中 [长度] 或 [宽度] 错误，使用 1x1 大小\n""切块图像大小格式为 [长度@宽度]", "WARN")
+            "切块图像大小中 [长度] 或 [宽度] 错误，使用 1x1 大小\n""切块图像大小格式为 [长度x宽度]", "WARN")
         return 1, 1
 
     def btn_run(self):
@@ -188,7 +190,7 @@ class Tab_Four(FilesTab):
 
         max_subs = self.ent_maxsubs.get().split("\n", 1)[0]
         if not max_subs.isdigit():
-            max_subs = -1
+            max_subs = 9999999999
         else:
             max_subs = int(max_subs)
 

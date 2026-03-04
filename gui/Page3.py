@@ -27,7 +27,7 @@ class Tab_Three(FilesTab):
         self.btn_pal_source.config(text="选择原色盘")
         self.btn_pal_target.config(text="选择新色盘")
 
-        self.ckb_auto_pal_source.config(text="自动选择色盘 - 原地形")
+        self.ckb_auto_pal_source.config(text="自动匹配色盘 - 原地形")
         self.ckb_auto_pal_source.place(width=160)
 
         ToolTip(self.ckb_auto_pal_source,

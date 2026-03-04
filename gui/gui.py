@@ -316,7 +316,8 @@ class FilesTab(ttk.Frame):
         self.tree.bind("<<TreeviewSelect>>", self.file_on_select)
         self.show_preview(Image.new("RGB", (10, 10), (255, 255, 255)))
 
-        ttk.Label(self.file_frame, text="测试版 v0.1 by No-FlyZone",font=("Microsoft YaHei UI", 8)).place(x=650, y=320, width=200, height=20)
+        ttk.Label(self.file_frame, text="测试版 v0.1 by No-FlyZone",
+                  font=("Microsoft YaHei UI", 8)).place(x=650, y=320, width=200, height=20)
         # ttk.Button(self.file_frame, text="导出",
         #            command=self.btn_run).place(x=3, y=350, width=80, height=25)
 
@@ -388,13 +389,13 @@ class FilesTab(ttk.Frame):
         self.var_auto_pal_source = tk.StringVar(value="enable")
 
         self.ckb_auto_pal_source = ttk.Checkbutton(
-            self.setting_frame, text="自动选择色盘", variable=self.var_auto_pal_source, onvalue="enable", offvalue="disable")
+            self.setting_frame, text="自动匹配色盘", variable=self.var_auto_pal_source, onvalue="enable", offvalue="disable")
 
         self.ckb_auto_pal_source.place(x=220, y=5, width=110, height=25)
 
         self.var_auto_pal_target = tk.StringVar(value="enable")
         self.ckb_auto_pal_target = ttk.Checkbutton(
-            self.setting_frame, text="自动选择色盘 - 新地形", variable=self.var_auto_pal_target, onvalue="enable", offvalue="disable")
+            self.setting_frame, text="自动匹配色盘 - 新地形", variable=self.var_auto_pal_target, onvalue="enable", offvalue="disable")
 
         self.ckb_auto_pal_target.place(x=220, y=30, width=160, height=25)
 
@@ -716,9 +717,14 @@ class FilesTab(ttk.Frame):
 
         selected = self.tree.selection()
         if not selected:
-            return
+            children = self.tree.get_children()
+            if children:
+                item_id = children[0]
+            else:
+                return
+        else:
+            item_id = selected[0]
 
-        item_id = selected[0]
         file = self.item_to_path[item_id]
 
         if self.lb_show_type == "PAGE_1" or self.lb_show_type == "PAGE_3":
