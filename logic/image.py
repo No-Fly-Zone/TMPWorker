@@ -60,10 +60,6 @@ def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, auto_rada
                 continue
             r, g, b, a = p
 
-            radar_count['r'] += r
-            radar_count['g'] += g
-            radar_count['b'] += b
-            radar_count['count'] += 1
 
             # 颜色映射为色盘
             idx = rgb_to_index.get((r, g, b))
@@ -71,6 +67,11 @@ def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, auto_rada
                 idx = cl.find_nearest_color_index((r, g, b), rgb_list)
             target[ptr] = idx
             ptr += 1
+            if idx != 0 :
+                radar_count['r'] += r
+                radar_count['g'] += g
+                radar_count['b'] += b
+                radar_count['count'] += 1
 
     # 下半
     for y in range(half, bh):
@@ -87,16 +88,17 @@ def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, auto_rada
                 continue
             r, g, b, a = p
 
-            radar_count['r'] += r
-            radar_count['g'] += g
-            radar_count['b'] += b
-            radar_count['count'] += 1
 
             idx = rgb_to_index.get((r, g, b))
             if idx is None:
                 idx = cl.find_nearest_color_index((r, g, b), rgb_list)
             target[ptr] = idx
             ptr += 1
+            if idx != 0 :
+                radar_count['r'] += r
+                radar_count['g'] += g
+                radar_count['b'] += b
+                radar_count['count'] += 1
 
     if auto_radar:
         radar = get_radar_color(radar_count)
@@ -127,9 +129,9 @@ def image_region_to_extradata(tile, region_img: Image, extra_w, extra_h, palette
     ptr = 0
     for y in range(abs(extra_h)):
         for x in range(abs(extra_w)):
-            if target[ptr] == 0:    # 忽视0号色
-                ptr += 1
-                continue
+            # if target[ptr] == 0:    # 忽视0号色
+            #     ptr += 1
+            #     continue
             if x < 0 or y < 0 or x >= region_img.width or y >= region_img.height:
                 ptr += 1
                 continue
