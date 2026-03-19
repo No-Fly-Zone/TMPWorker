@@ -126,7 +126,7 @@ class TmpTile:
         self.ExtraHeight = None
         self.DataBitfield = None
         self.Height = None
-        self.TerrainType = None
+        self.LandType = None
         self.RampType = None
         self.RadarRedLeft = None
         self.RadarGreenLeft = None
@@ -150,7 +150,7 @@ class TmpTile:
          self.ExtraWidth, self.ExtraHeight, data_flags) = ints
         self.DataBitfield = data_flags
         self.Height = struct.unpack("<B", f.read(1))[0]
-        self.TerrainType = struct.unpack("<B", f.read(1))[0]
+        self.LandType = struct.unpack("<B", f.read(1))[0]
         self.RampType = struct.unpack("<B", f.read(1))[0]
 
         self.RadarRedLeft = struct.unpack("<B", f.read(1))[0]
@@ -220,7 +220,7 @@ class TmpTile:
 
         # single-byte fields
         buf.write(struct.pack("<B", self.Height))
-        buf.write(struct.pack("<B", self.TerrainType))
+        buf.write(struct.pack("<B", self.LandType))
         buf.write(struct.pack("<B", self.RampType))
 
         buf.write(struct.pack("<B", self.RadarRedLeft))

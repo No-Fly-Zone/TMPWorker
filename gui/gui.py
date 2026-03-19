@@ -45,10 +45,11 @@ SECTION_EXP_NAME = "Names"
 SECTION_EXP_PRESET = "Presets"
 
 SECTION_LIST = "Files"
-DIR_TMP = "TMP_Files"
-DIR_IMAGE = "Image_Files"
+DIR_TMP2IMAGE = "TMP_2_Image_Files"
+DIR_IMAGE2TMP = "Image_2_TMP_Files"
 DIR_TMP_CONVERT = "TMP_Convert_Files"
-DIR_PNG = "PNG_Files"
+DIR_IMAGE_SPLIT = "Image_Split_Files"
+DIR_TMP_EDIT = "TMP_Edit_Files"
 
 SECTION_PATH = "Paths"
 DIR_PAL_SOURCE = "Source_Palette"
@@ -727,7 +728,7 @@ class FilesTab(ttk.Frame):
 
         file = self.item_to_path[item_id]
 
-        if self.lb_show_type == "PAGE_1" or self.lb_show_type == "PAGE_3":
+        if self.lb_show_type == "PAGE_1" or self.lb_show_type == "PAGE_3" or self.lb_show_type == "PAGE_5":
             self.path_pal_source = self.ent_pal_source.get()
 
             if not Path(self.path_pal_source).is_file():
@@ -866,11 +867,11 @@ class FilesTab(ttk.Frame):
         saved_list_str = '\n'.join(
             str(self.item_to_path[item_id]) for item_id in list(self.tree.get_children()))
         if self.lb_show_type == "PAGE_1":
-            config.set(SECTION_LIST, DIR_TMP,
+            config.set(SECTION_LIST, DIR_TMP2IMAGE,
                        saved_list_str)
 
         if self.lb_show_type == "PAGE_2":
-            config.set(SECTION_LIST, DIR_IMAGE,
+            config.set(SECTION_LIST, DIR_IMAGE2TMP,
                        saved_list_str)
 
         if self.lb_show_type == "PAGE_3":
@@ -878,9 +879,13 @@ class FilesTab(ttk.Frame):
                        saved_list_str)
 
         if self.lb_show_type == "PAGE_4":
-            config.set(SECTION_LIST, DIR_PNG,
+            config.set(SECTION_LIST, DIR_IMAGE_SPLIT,
                        saved_list_str)
 
+        if self.lb_show_type == "PAGE_5":
+            config.set(SECTION_LIST, DIR_TMP_EDIT,
+                       saved_list_str)
+            
         config[SECTION_PATH] = {
             DIR_PAL_SOURCE: self.path_pal_source,
             DIR_PAL_TARGET: self.path_pal_target,
@@ -939,13 +944,15 @@ class FilesTab(ttk.Frame):
 
         # 刷新文件列表
         if self.lb_show_type == "PAGE_1":
-            list_name = DIR_TMP
+            list_name = DIR_TMP2IMAGE
         if self.lb_show_type == "PAGE_2":
-            list_name = DIR_IMAGE
+            list_name = DIR_IMAGE2TMP
         if self.lb_show_type == "PAGE_3":
             list_name = DIR_TMP_CONVERT
         if self.lb_show_type == "PAGE_4":
-            list_name = DIR_PNG
+            list_name = DIR_IMAGE_SPLIT
+        if self.lb_show_type == "PAGE_5":
+            list_name = DIR_TMP_EDIT
 
         raw = config.get(SECTION_LIST, list_name, fallback="")
         self.lst_files = [i for i in raw.splitlines(

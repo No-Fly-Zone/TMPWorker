@@ -1,7 +1,37 @@
 
-from PIL import Image
+
+from PIL import Image, ImageDraw, ImageFont
 from logic.modules import TmpTile, TmpFile
 
+Land_types = [
+#   0           1           2           3           4           5
+    "Clear",    "Clear",    "Ice",      "Ice",      "Ice",      "Tunnel",
+#   6           7           8           9           10          11
+    "Railroad", "Rock",     "Rock",     "Water",    "Beach",    "Road",
+#   12          13          14          15
+    "Road",     "Clear",    "Rough",    "Cliff"
+]
+# "Clear",
+# "Road",
+# "Rough",
+# "Water",
+# "Rock",
+# "Tiberium",
+# "Beach",
+# "Tunnel",
+# "Railroad",
+# "Cliff",
+# "Wall",
+# "Ore",
+# "River",
+# "Ice",
+# "Weeds",
+
+
+# 0, 1 or 13 is used for Clear. Ice uses 0 to 4. 
+# Tunnel is 5. Railroad is 6. Rock uses 7 or 8 (15 is also used as rock in cliff tiles). 
+# Water is 9. Beach is 10. Road uses 11 or 12. Rough is 14. Cliff is 15.
+# Wall, Tiberium and Weeds don't have numbers but are processed based on their overlay placed on the cells.
 
 def map_z_byte(b):
     Z_DATA_LEVEL_MUIL = 8
@@ -9,7 +39,30 @@ def map_z_byte(b):
     return (v, v, v, 255)
 
 
-def tile_image(tile: TmpTile, bw, bh, palette, background_index=0):
+def draw_landtype(img: Image,land_type):
+
+    draw = ImageDraw.Draw(img)
+
+    try:
+        font = ImageFont.truetype("arial.ttf", 10)
+    except:
+        font = ImageFont.load_default()
+
+    # 写入文字
+    text = str(land_type) + " " + Land_types[land_type]
+    w, h = img.size
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    position = ((w - text_w) // 2, (h - text_h) // 2)
+    x, y = position
+    draw.text((x+1, y+1), text, font=font, fill=(0, 0, 0))  # 阴影
+    draw.text((x, y), text, font=font, fill=(255, 255, 255))  # 正文
+    draw.text(position, text, fill=(255, 255, 255), font=font)    
+
+    return img
+
+def tile_image(tile: TmpTile, bw, bh, palette, background_index=0, render_land_type =True):
     """
     渲染单个 tile 的 Normal 部分图像 (TileData) 
     """
@@ -53,6 +106,9 @@ def tile_image(tile: TmpTile, bw, bh, palette, background_index=0):
             if cindex != background_index:
                 r, g, b, a = palette[cindex]
                 px[x + i, y] = (r, g, b, a)
+
+    img = draw_landtype(img,int(tile.LandType))
+
 
     return img  # , find
 
