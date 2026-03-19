@@ -67,8 +67,8 @@ def create_ab_diamond_mask(a, b):
     return img
 
 
-a=9
-b=10
-img = create_ab_diamond_mask(a, b)
-fname = f"{a}x{b}.png"
-img.save(fname, "PNG")
+# a=9
+# b=10
+# img = create_ab_diamond_mask(a, b)
+# fname = f"{a}x{b}.png"
+# img.save(fname, "PNG")

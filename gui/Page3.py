@@ -38,6 +38,52 @@ class Tab_Three(FilesTab):
         ToolTip(self.ent_save_name, "格式为 [文本@起始序号] 或 [文本]，起始序号默认为 1\n"
                                     "导出文件将会命名为 [文本][起始序号].[气候名]")
 
+        self.ckb_show_land_type.place(x=380, y=5, width=160, height=25)
+        # 地表类型
+
+        ttk.Label(self.setting_frame, text="旧地表类型：").place(
+            x=515, y=5, width=80, height=24)
+        self.var_landtype_from = tk.StringVar()
+        self.cb_landtype_from = ttk.Combobox(
+            self.setting_frame,
+            textvariable=self.var_landtype_from,
+            values=("全部类型",
+                    "13 Clear",
+                    "11 Road",
+                    "14 Rough",
+                    "09 Water",
+                    "10 Beach",
+                    "05 Tunnel",
+                    "06 Railroad",
+                    "15 Cliff"
+                    ),
+            state="readonly")
+        ToolTip(self.cb_landtype_from,
+                "旧地表类型")
+        self.cb_landtype_from.place(x=595, y=5, width=115, height=24)
+        self.cb_landtype_from.current(0)
+
+        ttk.Label(self.setting_frame, text="新地表类型：").place(
+            x=515, y=30, width=88, height=24)
+        self.var_landtype_to = tk.StringVar()
+        self.cb_landtype_to = ttk.Combobox(
+            self.setting_frame,
+            textvariable=self.var_landtype_to,
+            values=("13 Clear",
+                    "11 Road",
+                    "14 Rough",
+                    "09 Water",
+                    "10 Beach",
+                    "05 Tunnel",
+                    "06 Railroad",
+                    "15 Cliff"
+                    ),
+            state="readonly")
+        ToolTip(self.cb_landtype_to,
+                "新地表类型")
+        self.cb_landtype_to.place(x=595, y=30, width=115, height=24)
+        self.cb_landtype_to.current(0)
+
         # 导出设置
 
         ttk.Label(self.setting_frame, text="导出文件气候：").place(
@@ -119,7 +165,7 @@ class Tab_Three(FilesTab):
         with open(template_tmp, "rb") as src, open(save_path, "wb") as dst:
             dst.write(src.read())
 
-    def _process_one(self, import_img, template_tmp, palette, save_path, total):
+    def _process_one(self, import_img, template_tmp, palette, save_path, total, old_land, new_land):
         tmp = TmpFile(template_tmp)
 
         ok, size1, size2 = impt.import_image_to_tmp(
@@ -128,6 +174,8 @@ class Tab_Three(FilesTab):
             pal=palette,
             img=import_img
         )
+        if old_land != -2:
+            impt.import_change_land_type(tmp,old_land, new_land)
 
         if total < 100:
             self.show_preview(import_img)
@@ -151,6 +199,18 @@ class Tab_Three(FilesTab):
         self.path_pal_source = self.ent_pal_source.get()
         self.path_pal_target = self.ent_pal_target.get()
         self.path_out_floder = self.ent_out_floder.get()
+
+        old_land, new_land = -2, -2
+        if self.var_change_land_type.get() == "enable":
+            print(f"{self.var_landtype_from.get()}")
+            print(f"{self.var_landtype_to.get()}")
+            index = self.cb_landtype_from.current()
+            if index == 0:
+                old_land = -1
+            else:
+                old_land = int(self.var_landtype_from.get()[:2])
+            new_land = int(self.var_landtype_to.get()[:2])
+            print(f"old_land {old_land} new_land {new_land}")
 
         if not Path(self.path_pal_source).is_file():
             messagebox.showwarning("警告", "未选择色盘")
@@ -205,7 +265,7 @@ class Tab_Three(FilesTab):
             )
 
             if self._process_one(
-                re_image, tmp_path, pal_target, save_path, total
+                re_image, tmp_path, pal_target, save_path, total, old_land, new_land
             ):
                 self.log(f"已导出第{index}个文件 {save_path}")
             else:

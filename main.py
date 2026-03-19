@@ -15,7 +15,7 @@ from gui.Page1 import Tab_One
 from gui.Page2 import Tab_Two
 from gui.Page3 import Tab_Three
 from gui.Page4 import Tab_Four
-from gui.Page5 import Tab_Five
+# from gui.Page5 import Tab_Five
 
 # pyinstaller -w main.py
 
@@ -83,9 +83,9 @@ class App(tk.Tk):
         self.tab_4 = Tab_Four(notebook, self.append_log)
         notebook.add(self.tab_4, text="图像切块")
 
-        # 第五标签页
-        self.tab_5 = Tab_Five(notebook, self.append_log)
-        notebook.add(self.tab_5, text="属性编辑")
+        # # 第五标签页
+        # self.tab_5 = Tab_Five(notebook, self.append_log)
+        # notebook.add(self.tab_5, text="属性编辑")
 
         notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
         self._init_log()

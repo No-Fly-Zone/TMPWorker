@@ -3,13 +3,22 @@
 from PIL import Image, ImageDraw, ImageFont
 from logic.modules import TmpTile, TmpFile
 
-Land_types = [
+LANDTYPES = [
 #   0           1           2           3           4           5
     "Clear",    "Clear",    "Ice",      "Ice",      "Ice",      "Tunnel",
 #   6           7           8           9           10          11
     "Railroad", "Rock",     "Rock",     "Water",    "Beach",    "Road",
 #   12          13          14          15
     "Road",     "Clear",    "Rough",    "Cliff"
+]
+
+LANTYPE_COLORS = [
+  # "Clear",    "Clear",    "Ice",      "Ice",      "Ice",      "Tunnel",
+    "#95ff57","#95ff57","#000000","#000000","#000000","#866e00ff",
+  # "Railroad", "Rock",     "Rock",     "Water",    "Beach",    "Road",
+    "#D3D3D3","#ff4a4a","#ff4a4a","#9fdee0","#00ff2a","#e562ff",
+  # "Road",     "Clear",    "Rough",    "Cliff"
+    "#e562ff","#95ff57","#FF9F22","#ff5959"
 ]
 # "Clear",
 # "Road",
@@ -49,20 +58,20 @@ def draw_landtype(img: Image,land_type):
         font = ImageFont.load_default()
 
     # 写入文字
-    text = str(land_type) + " " + Land_types[land_type]
+    text_land = str(land_type) + " " + LANDTYPES[land_type]
     w, h = img.size
-    bbox = draw.textbbox((0, 0), text, font=font)
+    bbox = draw.textbbox((0, 0), text_land, font=font)
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
     position = ((w - text_w) // 2, (h - text_h) // 2)
     x, y = position
-    draw.text((x+1, y+1), text, font=font, fill=(0, 0, 0))  # 阴影
-    draw.text((x, y), text, font=font, fill=(255, 255, 255))  # 正文
-    draw.text(position, text, fill=(255, 255, 255), font=font)    
+    draw.text((x+1, y-4), text_land, font=font, fill=(0, 0, 0))  # 阴影
+    draw.text((x, y-5), text_land, font=font, fill=LANTYPE_COLORS[land_type])  # 正文
+    # draw.text(position, text, fill=(255, 255, 255), font=font)    
 
     return img
 
-def tile_image(tile: TmpTile, bw, bh, palette, background_index=0, render_land_type =True):
+def tile_image(tile: TmpTile, bw, bh, palette, background_index=0, render_land_type=False):
     """
     渲染单个 tile 的 Normal 部分图像 (TileData) 
     """
@@ -107,8 +116,9 @@ def tile_image(tile: TmpTile, bw, bh, palette, background_index=0, render_land_t
                 r, g, b, a = palette[cindex]
                 px[x + i, y] = (r, g, b, a)
 
-    img = draw_landtype(img,int(tile.LandType))
 
+    if render_land_type:
+        img = draw_landtype(img,int(tile.LandType))
 
     return img  # , find
 
@@ -141,7 +151,7 @@ def extra_image(tile: TmpTile, palette, background_index=0):
     return img, w, h  # , find
 
 
-def render_full_png(tmp:TmpFile, palette, output_img, render_extra=True, out_png=True, out_bmp=False):
+def render_full_png(tmp:TmpFile, palette, output_img, render_extra=True, out_png=True, out_bmp=False,show_landtype=False):
     """
     组合单个 tile 的 Normal 和 Extra 图像并保存
     返回 img 作为界面预览
@@ -165,7 +175,7 @@ def render_full_png(tmp:TmpFile, palette, output_img, render_extra=True, out_png
             continue
 
         # tile image
-        tile_img = tile_image(tile, tmp.BlockWidth, tmp.BlockHeight, palette, background_index)
+        tile_img = tile_image(tile, tmp.BlockWidth, tmp.BlockHeight, palette, background_index,render_land_type=show_landtype)
         ox = tile.X - X
         oy = tile.Y - tile.Height * half - Y
         canvas.alpha_composite(tile_img, (ox, oy))

@@ -245,3 +245,16 @@ def save_tmpfile(tmp: TmpFile, out_filename):
         f.seek(16)
         f.write(struct.pack("<" + "i" * idx_count, *offsets))
     print("Saved TMP:", out_filename)
+
+
+def import_change_land_type(tmp: TmpFile, old_land:int,new_land:int):
+    """
+    """
+    for tile in tmp.tiles:
+        if tile is None:
+            continue
+        if old_land == -1:
+            tile.LandType = new_land
+        elif old_land == tile.LandType:
+            tile.LandType = new_land
+

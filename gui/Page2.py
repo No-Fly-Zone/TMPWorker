@@ -25,6 +25,8 @@ class Tab_Two(FilesTab):
         self.btn_pal_target.place_forget()
 
         self.ckb_auto_pal_target.place_forget()
+        self.ckb_show_land_type.place_forget()
+        self.ckb_change_land_type.place_forget()
 
         ToolTip(self.ckb_auto_pal_source,
                 "根据设置的导出文件后缀在 [选中色盘] 的文件夹中自动匹配\n格式为 isoxxx.pal 的色盘文件")

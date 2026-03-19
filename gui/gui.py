@@ -60,6 +60,8 @@ DIR_TEMPLATE = "Template_TMP"
 SECTION_SETTING = "Options"
 SET_PAL_SOURCE = "Auto_Match_Source_Palette"
 SET_PAL_TARGET = "Auto_Match_Target_Palette"
+SET_SHOW_LAND_TYPE = "Show_Land_Types"
+SET_CHANGE_LAND_TYPE = "Change_Land_Types"
 SET_THEATER = "Theater"
 
 # ---------------- 全局变量 ----------------
@@ -400,6 +402,19 @@ class FilesTab(ttk.Frame):
 
         self.ckb_auto_pal_target.place(x=220, y=30, width=160, height=25)
 
+        # 2) Checkbox 地形类型
+        self.var_show_land_type = tk.StringVar(value="disable")
+        self.ckb_show_land_type = ttk.Checkbutton(
+            self.setting_frame, text="显示地形类型", variable=self.var_show_land_type, onvalue="enable", offvalue="disable")
+
+        self.ckb_show_land_type.place(x=480, y=5, width=160, height=25)
+
+        self.var_change_land_type = tk.StringVar(value="disable")
+        self.ckb_change_land_type = ttk.Checkbutton(
+            self.setting_frame, text="切换地表类型", variable=self.var_change_land_type, onvalue="enable", offvalue="disable")
+
+        self.ckb_change_land_type.place(x=380, y=30, width=160, height=25)
+
         # 2) Label 前缀
         self.lb_prefix = ttk.Label(self.setting_frame, text="仅转换前缀：")
         self.lb_prefix.place(x=10, y=5, width=80, height=25)
@@ -454,7 +469,10 @@ class FilesTab(ttk.Frame):
         self.var_save_name.trace_add("write", self.refresh_export_preview)
         self.cb_preset.bind("<<ComboboxSelected>>",
                             self.refresh_export_preview)
+        
         self.var_auto_pal_source.trace_add("write", self.file_on_select)
+        
+        self.var_show_land_type.trace_add("write", self.file_on_select)
         # self.check_var.trace_add("write", self.refresh_export_preview)
     # --------- 行为逻辑 ---------
 
@@ -770,9 +788,10 @@ class FilesTab(ttk.Frame):
         else:
             palette = PalFile(self.path_pal_source).palette
 
+        show_landtype = self.var_show_land_type.get() == "enable"
         render_img = render.render_full_png(
             tmp, palette, export_img,
-            render_extra=True, out_bmp=False, out_png=False)
+            render_extra=True, out_bmp=False, out_png=False,show_landtype=show_landtype)
 
         return render_img, palette
 
@@ -896,7 +915,9 @@ class FilesTab(ttk.Frame):
         config[SECTION_SETTING] = {
             SET_THEATER: ",".join(self.theaters),
             SET_PAL_SOURCE: self.var_auto_pal_source.get(),
-            SET_PAL_TARGET: self.var_auto_pal_target.get()
+            SET_PAL_TARGET: self.var_auto_pal_target.get(),
+            SET_SHOW_LAND_TYPE:self.var_show_land_type.get(),
+            SET_CHANGE_LAND_TYPE:self.var_change_land_type.get()
         }
 
         with open(SETTING_PATH, "w", encoding="utf-8") as f:
@@ -941,6 +962,22 @@ class FilesTab(ttk.Frame):
             self.var_auto_pal_target.set(auto_pal2)
         else:
             self.var_auto_pal_target.set("enable")
+
+        # 显示地表类型
+        show_landtype = config.get(SECTION_SETTING, SET_SHOW_LAND_TYPE,
+                               fallback=True)
+        if show_landtype in {"enable", "disable"}:
+            self.var_show_land_type.set(show_landtype)
+        else:
+            self.var_show_land_type.set("disable")
+
+        # 更改地表类型
+        show_landtype = config.get(SECTION_SETTING, SET_CHANGE_LAND_TYPE,
+                               fallback=True)
+        if show_landtype in {"enable", "disable"}:
+            self.var_change_land_type.set(show_landtype)
+        else:
+            self.var_change_land_type.set("disable")
 
         # 刷新文件列表
         if self.lb_show_type == "PAGE_1":

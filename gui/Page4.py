@@ -37,6 +37,8 @@ class Tab_Four(FilesTab):
         self.lb_pal_source.place_forget()
         self.ent_pal_source.place_forget()
         self.btn_pal_source.place_forget()
+        self.ckb_show_land_type.place_forget()
+        self.ckb_change_land_type.place_forget()
 
         self.path_frame.place(x=10, y=385, width=880, height=120 - 30 - 30)
 

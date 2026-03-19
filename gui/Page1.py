@@ -30,6 +30,7 @@ class Tab_One(FilesTab):
         self.btn_pal_target.place_forget()
 
         self.ckb_auto_pal_target.place_forget()
+        self.ckb_change_land_type.place_forget()
 
         self.path_frame.place(x=10, y=385, width=880, height=120 - 30)
         self.setting_frame.place(x=10, y=515 - 30, width=880, height=120)
