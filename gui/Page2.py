@@ -37,6 +37,7 @@ class Tab_Two(FilesTab):
         self.var_auto_radar = tk.StringVar(value="enable")
         self.var_impt_img = tk.StringVar(value="enable")
         self.var_impt_ext = tk.StringVar(value="enable")
+        self.var_flip = tk.StringVar(value="disable")
 
         self.ckb_auto_radar = ttk.Checkbutton(
             self.setting_frame, text="自动雷达色", variable=self.var_auto_radar, onvalue="enable", offvalue="disable")
@@ -52,6 +53,11 @@ class Tab_Two(FilesTab):
             self.setting_frame, text="导入额外图像", variable=self.var_impt_ext, onvalue="enable", offvalue="disable")
         self.ckb_impt_ext.place(x=350, y=30, width=100, height=25)
         ToolTip(self.ckb_impt_ext, "导入 Extra 部分的图像\n取消勾选时，若模板与指定导出气候不一致，图像可能错乱")
+
+        self.ckb_flip = ttk.Checkbutton(
+            self.setting_frame, text="水平翻转模板", variable=self.var_flip, onvalue="enable", offvalue="disable")
+        self.ckb_flip.place(x=725, y=15, width=100, height=25)
+        ToolTip(self.ckb_flip, "导入时将模板水平翻转\n在制作悬崖等需要水平对称的图像时使用")
 
         # 指定模板
         self.var_specify_template = tk.StringVar()
@@ -187,6 +193,13 @@ class Tab_Two(FilesTab):
 
     def _process_one(self, import_img, template_tmp, palette, save_path, total):
         tmp = TmpFile(template_tmp)
+        flip = self.var_flip.get() == "enable"
+        if flip:
+            impt.flip_all_tile_data(tmp,tmp.BlockWidth, tmp.BlockHeight)
+            impt.flip_all_tiles_zdata(tmp,tmp.BlockWidth, tmp.BlockHeight)
+            for tile in tmp.tiles:
+                tile.X = -tile.X
+                tile.ExtraX=tmp.BlockWidth-(tile.ExtraX+tile.ExtraWidth)
 
         ok, size1, size2 = impt.import_image_to_tmp(
             tmp,

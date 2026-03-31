@@ -5,7 +5,7 @@ from logic.modules import TmpTile, TmpFile
 
 LANDTYPES = [
 #   0           1           2           3           4           5
-    "Clear",    "Clear",    "Ice",      "Ice",      "Ice",      "Tunnel",
+    "Clear",    "Ice",      "Ice",      "Ice",      "Ice",      "Tunnel",
 #   6           7           8           9           10          11
     "Railroad", "Rock",     "Rock",     "Water",    "Beach",    "Road",
 #   12          13          14          15
@@ -13,8 +13,8 @@ LANDTYPES = [
 ]
 
 LANTYPE_COLORS = [
-  # "Clear",    "Clear",    "Ice",      "Ice",      "Ice",      "Tunnel",
-    "#95ff57","#95ff57","#000000","#000000","#000000","#866e00ff",
+  # "Clear",    "Ice",      "Ice",      "Ice",      "Ice",      "Tunnel",
+    "#95ff57","#FFFFFF","#FFFFFF","#FFFFFF","#FFFFFF","#866e00ff",
   # "Railroad", "Rock",     "Rock",     "Water",    "Beach",    "Road",
     "#D3D3D3","#ff4a4a","#ff4a4a","#9fdee0","#00ff2a","#e562ff",
   # "Road",     "Clear",    "Rough",    "Cliff"
@@ -36,17 +36,34 @@ LANTYPE_COLORS = [
 # "Ice",
 # "Weeds",
 
-
-# 0, 1 or 13 is used for Clear. Ice uses 0 to 4. 
-# Tunnel is 5. Railroad is 6. Rock uses 7 or 8 (15 is also used as rock in cliff tiles). 
-# Water is 9. Beach is 10. Road uses 11 or 12. Rough is 14. Cliff is 15.
-# Wall, Tiberium and Weeds don't have numbers but are processed based on their overlay placed on the cells.
-
 def map_z_byte(b):
     Z_DATA_LEVEL_MUIL = 8
     v = int(max(0, min(255, b * Z_DATA_LEVEL_MUIL)))
     return (v, v, v, 255)
 
+
+def draw_XY(img: Image,x,y):
+
+    draw = ImageDraw.Draw(img)
+
+    try:
+        font = ImageFont.truetype("arial.ttf", 10)
+    except:
+        font = ImageFont.load_default()
+
+    # 写入文字
+    text_land = str(x) + " " + str(y)
+    w, h = img.size
+    bbox = draw.textbbox((0, 0), text_land, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    position = ((w - text_w) // 2, (h - text_h) // 2)
+    x, y = position
+    draw.text((x+1, y-4), text_land, font=font, fill=(0, 0, 0))  # 阴影
+    draw.text((x, y-5), text_land, font=font, fill=(255,255,255))  # 正文
+    # draw.text(position, text, fill=(255, 255, 255), font=font)    
+
+    return img
 
 def draw_landtype(img: Image,land_type):
 
@@ -119,6 +136,7 @@ def tile_image(tile: TmpTile, bw, bh, palette, background_index=0, render_land_t
 
     if render_land_type:
         img = draw_landtype(img,int(tile.LandType))
+        # img = draw_XY(img,int(tile.X/30),int(tile.Y/15))
 
     return img  # , find
 
@@ -178,6 +196,9 @@ def render_full_png(tmp:TmpFile, palette, output_img, render_extra=True, out_png
         tile_img = tile_image(tile, tmp.BlockWidth, tmp.BlockHeight, palette, background_index,render_land_type=show_landtype)
         ox = tile.X - X
         oy = tile.Y - tile.Height * half - Y
+        # if int(tile.Y/15-tile.X/30)==0:
+            
+        #     oy = tile.Y - tile.Height * half - Y -60
         canvas.alpha_composite(tile_img, (ox, oy))
 
         # ExtraData overlay
@@ -273,10 +294,19 @@ def extra_ZData(tile: TmpTile):
             ptr += 1
             if zb == 0 or zb == 205:
                 continue
-            px[x, y] = map_z_byte(zb)
+            
+            color = map_z_byte(zb)
+            if not isinstance(color, (tuple, list)) or len(color) < 4:
+                continue  # 无效颜色跳过
+            
+            if color[:3] == (255, 255, 255):
+                continue
+            
+            px[x, y] = color
+
     return img, w, h
 
-def render_full_ZData(tmp, out_z_png, out_png=False, out_bmp=False):
+def render_full_ZData(tmp: TmpFile, out_z_png, out_png=False, out_bmp=False):
     """
     渲染 ZData 画布，并填充透明像素为红色
     """

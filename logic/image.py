@@ -2,7 +2,7 @@
 import struct
 from PIL import Image
 
-from logic.modules import TmpFile
+from logic.modules import TmpFile,TmpTile
 import logic.color as cl
 from PIL import Image
 
@@ -19,8 +19,136 @@ def get_radar_color(radar_count):
 
 # --- 从区域图像生成 TileData  ---
 
+def flip_tile_zdata_horizontal(tile:TmpTile, block_width, block_height):
+    """
+    水平翻转 tile.ZData (bytes 类型)
+    完全匹配原渲染逻辑
+    """
+    if not tile.ZData:
+        return
 
-def image_region_to_tiledata(tile, region_img: Image, bw, bh, palette, auto_radar=False):
+    data = tile.ZData
+    ptr = 0
+    half = block_height // 2
+    flipped = bytearray()
+
+    # 上半部分：每行宽度 +4
+    width = 0
+    for y in range(half):
+        width += 4
+        row = data[ptr:ptr + width]
+        ptr += width
+        flipped.extend(row[::-1])
+
+    # 下半部分：每行宽度 -4
+    for y in range(half, block_height):
+        width -= 4
+        row = data[ptr:ptr + width]
+        ptr += width
+        flipped.extend(row[::-1])
+
+    tile.ZData = bytes(flipped)
+
+def flip_tile_extra_zdata_horizontal(tile:TmpTile):
+    """
+    水平翻转 tile.ExtraZData (bytes 类型)
+    """
+    if not tile.ExtraZData or tile.ExtraWidth <= 0:
+        return
+
+    w = abs(tile.ExtraWidth)
+    h = abs(tile.ExtraHeight)
+    data = tile.ExtraZData
+    flipped = bytearray()
+
+    for y in range(h):
+        row = data[y * w : (y + 1) * w]
+        flipped.extend(row[::-1])
+
+    tile.ExtraZData = bytes(flipped)
+def flip_all_tiles_zdata(tmp:TmpFile, block_width, block_height):
+    """
+    批量翻转所有 tile 的 ZData + ExtraZData（整图水平翻转）
+    直接在 tmp 对象上修改
+    """
+    for tile in tmp.tiles:
+        if tile is None:
+            continue
+
+        # 翻转菱形 ZData
+        if tile.has_z and tile.ZData:
+            flip_tile_zdata_horizontal(tile, block_width, block_height)
+
+        # 翻转矩形 ExtraZData
+        if tile.ExtraZData:
+            flip_tile_extra_zdata_horizontal(tile)
+
+def flip_tile_data_horizontal(tile:TmpTile, block_width, block_height):
+    """
+    水平翻转 tile.TileData (bytes 类型)
+    菱形结构，和渲染逻辑完全一致
+    """
+    if not tile.TileData:
+        return
+
+    data = tile.TileData  # bytes 类型
+    ptr = 0
+    half = block_height // 2
+    flipped = bytearray()
+
+    # 上半部分：每行宽度 +4
+    width = 0
+    for y in range(half):
+        width += 4
+        row = data[ptr:ptr + width]
+        ptr += width
+        flipped.extend(row[::-1])  # 反转行并追加
+
+    # 下半部分：每行宽度 -4
+    for y in range(half, block_height):
+        width -= 4
+        row = data[ptr:ptr + width]
+        ptr += width
+        flipped.extend(row[::-1])
+
+    # 转回 bytes 赋值回去
+    tile.TileData = bytes(flipped)
+
+def flip_extra_data_horizontal(tile:TmpTile):
+    """
+    水平翻转 tile.ExtraData (bytes 类型)
+    矩形结构
+    """
+    if not tile.ExtraData or tile.ExtraWidth <= 0:
+        return
+
+    w = abs(tile.ExtraWidth)
+    h = abs(tile.ExtraHeight)
+    data = tile.ExtraData
+    flipped = bytearray()
+
+    # 逐行反转
+    for y in range(h):
+        row = data[y * w : (y + 1) * w]
+        flipped.extend(row[::-1])
+
+    tile.ExtraData = bytes(flipped)
+def flip_all_tile_data(tmp, block_width, block_height):
+    """
+    批量翻转所有 tile 的 TileData + ExtraData (bytes)
+    """
+    for tile in tmp.tiles:
+        if tile is None:
+            continue
+
+        if tile.TileData:
+            flip_tile_data_horizontal(tile, block_width, block_height)
+
+        if tile.ExtraData:
+            flip_extra_data_horizontal(tile)
+
+
+def image_region_to_tiledata(tile:TmpTile, region_img: Image, bw, bh, palette, auto_radar=False):
     """
     region_img 写入 tile 的 Normal 部分，同时判断雷达色与桥头
     """

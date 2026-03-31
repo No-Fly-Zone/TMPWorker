@@ -55,11 +55,17 @@ class Tab_Three(FilesTab):
                     "10 Beach",
                     "05 Tunnel",
                     "06 Railroad",
-                    "15 Cliff"
-                    ),
-            state="readonly")
+                    "15 Cliff",
+                    ))
+            # state="readonly")
         ToolTip(self.cb_landtype_from,
-                "旧地表类型")
+                "旧地表类型\n"
+                "0/13 Clear \t1/2/3/4 Ice  \t5 Tunnel\n"
+                "6 Railroad  \t7/8 Rock     \t9 Water\n"
+                "10 Beach   \t11/12 Road   \t14 Rough\n"
+                "15 Cliff (Rock)\n"
+                "其中 全部 Ice 和 8 Rock 未在 RA2 中使用"
+                )
         self.cb_landtype_from.place(x=595, y=5, width=115, height=24)
         self.cb_landtype_from.current(0)
 
@@ -80,7 +86,12 @@ class Tab_Three(FilesTab):
                     ),
             state="readonly")
         ToolTip(self.cb_landtype_to,
-                "新地表类型")
+                "新地表类型\n"
+                "0/13 Clear \t1/2/3/4 Ice  \t5 Tunnel\n"
+                "6 Railroad  \t7/8 Rock     \t9 Water\n"
+                "10 Beach   \t11/12 Road   \t14 Rough\n"
+                "15 Cliff (Rock)\n"
+                "其中 全部 Ice 和 8 Rock 未在 RA2 中使用")
         self.cb_landtype_to.place(x=595, y=30, width=115, height=24)
         self.cb_landtype_to.current(0)
 

@@ -639,9 +639,9 @@ class FilesTab(ttk.Frame):
     def btn_choose_folder(self):
         floder = filedialog.askdirectory(title="选择导出文件夹")
         if not floder:
-            self.path_out_floder = ""
-            self.ent_out_floder.delete(0, tk.END)
-            self.save_config()
+            # self.path_out_floder = ""
+            # self.ent_out_floder.delete(0, tk.END)
+            # self.save_config()
             return
 
         self.path_out_floder = floder
@@ -655,9 +655,9 @@ class FilesTab(ttk.Frame):
             pal = filedialog.askopenfilename(
                 title="选择 pal 文件",    filetypes=[("PAL files", "*.pal")])
             if not pal:
-                self.path_pal_source = ""
-                self.ent_pal_source.delete(0, tk.END)
-                self.save_config()
+                # self.path_pal_source = ""
+                # self.ent_pal_source.delete(0, tk.END)
+                # self.save_config()
                 return
             if pal.endswith(".pal"):
                 self.path_pal_source = pal
@@ -673,9 +673,9 @@ class FilesTab(ttk.Frame):
             pal = filedialog.askopenfilename(
                 title="选择 pal 文件",    filetypes=[("PAL files", "*.pal")])
             if not pal:
-                self.path_pal_target = ""
-                self.ent_pal_target.delete(0, tk.END)
-                self.save_config()
+                # self.path_pal_target = ""
+                # self.ent_pal_target.delete(0, tk.END)
+                # self.save_config()
                 return
             if pal.endswith(".pal"):
                 self.path_pal_target = pal
@@ -689,9 +689,9 @@ class FilesTab(ttk.Frame):
         template = filedialog.askopenfilename(title="选择文件",    filetypes=[
             ("TMP files", self.tmp_suffix)])
         if not template:
-            self.path_template = ""
-            self.ent_template.delete(0, tk.END)
-            self.save_config()
+            # self.path_template = ""
+            # self.ent_template.delete(0, tk.END)
+            # self.save_config()
             return
         else:
             self.path_template = template
