@@ -17,7 +17,7 @@ from gui.Page3 import Tab_Three
 from gui.Page4 import Tab_Four
 # from gui.Page5 import Tab_Five
 
-# pyinstaller -w main.py
+#  conda run -n tmpworker pyinstaller -w main.py
 
 
 def get_base_path():

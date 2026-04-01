@@ -314,6 +314,30 @@ class TmpFile:
                 tile.read(f, self.BlockWidth, self.BlockHeight)
                 self.tiles.append(tile)
 
+    def sort_tiles_by_order(self):
+        """
+        重新排列 self.tiles
+        """
+        order_coords = []
+        for sh in range(0, self.Height):
+            x_start = -sh*2//2
+            for sw in range(0, self.Width):
+                sx = (x_start + sw) * 30
+                sy = (sx/30 + sh*2) * 15
+                order_coords.append([sx, sy])
+        print(order_coords)
+        tile_dict = {}
+        for tile in self.tiles:
+            print((tile.X, tile.Y))
+            if tile is not None:
+                tile_dict[(tile.X, tile.Y)] = tile
+
+        sorted_tiles = []
+        for (x, y) in order_coords:
+            sorted_tiles.append(tile_dict.get((x, y), None))
+
+        self.tiles = sorted_tiles
+
     def compute_canvas_bounds(self):
         '''
         导出该 tmp 文件的画布大小

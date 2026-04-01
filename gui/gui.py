@@ -319,7 +319,7 @@ class FilesTab(ttk.Frame):
         self.tree.bind("<<TreeviewSelect>>", self.file_on_select)
         self.show_preview(Image.new("RGB", (10, 10), (255, 255, 255)))
 
-        ttk.Label(self.file_frame, text="测试版 v0.1 by No-FlyZone",
+        ttk.Label(self.file_frame, text="测试版 v0.2 by No-FlyZone",
                   font=("Microsoft YaHei UI", 8)).place(x=650, y=320, width=200, height=20)
         # ttk.Button(self.file_frame, text="导出",
         #            command=self.btn_run).place(x=3, y=350, width=80, height=25)

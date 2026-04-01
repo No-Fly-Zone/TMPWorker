@@ -200,6 +200,8 @@ class Tab_Two(FilesTab):
             for tile in tmp.tiles:
                 tile.X = -tile.X
                 tile.ExtraX=tmp.BlockWidth-(tile.ExtraX+tile.ExtraWidth)
+            tmp.Height,tmp.Width = tmp.Width,tmp.Height
+            tmp.sort_tiles_by_order()
 
         ok, size1, size2 = impt.import_image_to_tmp(
             tmp,
